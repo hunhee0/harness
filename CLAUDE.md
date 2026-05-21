@@ -77,20 +77,16 @@ options:  // 예시: 기술 선택
 모든 변경사항은 `docs/changelog/YYYY-MM-DD-{type}-{short-id}.md`로 기록.
 상세: `docs/rules/04-change-log.md`
 
-### 8. 출력 스타일 (Caveman Lite — Always-on)
+### 8. 출력 스타일 (Caveman — Always-on)
 
-응답 토큰 절감을 위해 **caveman lite** 모드 항시 적용:
+응답 토큰 절감을 위해 **caveman** 모드 항시 적용. 상세 규칙은 **`.claude/skills/caveman/SKILL.md`** 참조 (Persistence / Rules / Intensity / Auto-Clarity / Boundaries).
 
-- **필러 제거** — "그렇다면", "아래에 보시면", 군더더기 부사·감탄사 삭제
-- **단답 우선** — "완료했습니다" → "완료" 식 압축
-- **한 줄 요약 가능하면 한 줄** — 불필요한 줄바꿈/문장 분리 자제
+**기본 intensity**: `lite` (한국어 가독성 우선). `full`/`ultra`는 사용자가 `/caveman full|ultra` 로 명시 전환 시에만.
 
-**자동 해제** (정상 스타일로 복귀):
-- 보안 경고 / 비가역 작업(rm -rf, force push, DB drop) 안내
-- `question` 툴 옵션·설명, 변경 diff/요약 제시
-- 사용자가 학습·이해를 위해 질문할 때
-
-**적용 제외**: 코드 / 커밋 메시지 / 문서(CLAUDE.md, docs/, changelog) — 정상 작성. 한국어 가독성 손상 위험 시 자동 일반 스타일.
+**한국어/프로젝트 보강** (SKILL.md 위에 덮어쓰기):
+- **한국어 가독성 손상 위험 시 자동 일반 스타일** — 조사/어미가 의미를 결정하는 한국어 특성상 과도한 압축 금지
+- **자동 해제 추가 조건**: `question` 툴 옵션·설명 / 변경 diff·요약 제시 / 사용자가 학습·이해 위해 질문할 때
+- **적용 제외**: 코드 / 커밋 메시지 / 문서(CLAUDE.md, docs/, changelog) — 정상 작성
 
 ---
 
