@@ -21,7 +21,7 @@ docs/changelog/YYYY-MM-DD-{type}-{short-id}.md
 - `refactor` — 리팩토링
 - `docs` — 문서 변경
 - `chore` — 설정/인프라 변경
-- `breaking` —破壊적 변경
+- `breaking` — 파괴적 변경
 
 **예시:**
 - `2026-05-14-feat-initial-harness-setup.md`

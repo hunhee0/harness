@@ -1,119 +1,79 @@
 # CLAUDE.md — 프로젝트 진입점
 
-## 📌 반드시 먼저 읽을 것
+이 파일은 프로젝트의 **진입점(entry point)**이자 **하네스(harness) 루트 인스트럭션**입니다.
+모든 작업 전에 이 파일을 읽고, `docs/rules/`의 모든 규칙을 반드시 준수하세요.
 
-이 파일은 프로젝트의 **진입점(entry point)**입니다.
-아래 규칙들은 **절대 규칙**이며, 모든 작업 전에 반드시 준수해야 합니다.
+> ⚠️ LLM은 약 150-200개 instruction까지만 안정적으로 따릅니다.
+> 이 파일은 의도적으로 짧게 유지하며, 상세 규칙은 `docs/rules/`로 위임합니다 (Progressive Disclosure).
 
 ---
 
-## 🔒 절대 규칙 (MUST READ)
+## 🔒 절대 규칙 (Always-on)
 
-### 1. `docs/rules/` 반드시 읽고 지키기
+### 1. `docs/rules/` 반드시 읽고 준수
 
-**`docs/rules/` 폴더의 모든 파일을 반드시 읽으세요.**
-이 폴더에는 이 프로젝트의 구조, 아키텍처, 개발 워크플로우, AI 에이전트 가이드라인 등
-**모든 작업의 기준**이 작성되어 있어 읽고 반드시 규칙 준수.
----
+| 파일 | 내용 |
+|---|---|
+| `01-project-structure.md` | 프로젝트 구조 및 아키텍처 |
+| `02-development-workflow.md` | SDD + Speckit + TDD + Verification Loop |
+| `03-ai-agent-guidelines.md` | AI 에이전트/스킬 사용 가이드라인 |
+| `04-change-log.md` | 변경 이력 관리 가이드 |
+| `05-context-management.md` | 컨텍스트/메모리 관리 (하네스 엔지니어링) |
 
-## 🔒 절대 규칙 (MUST READ)
+### 2. Karpathy 4원칙 (LLM 실수 감소)
 
-### 1. `docs/rules/` 반드시 읽고 지키기
+| 원칙 | 핵심 |
+|---|---|
+| **Think Before Coding** | 가정 명시, 모호하면 옵션 제시, 이해 안 되면 질문 |
+| **Simplicity First** | 요청된 기능만, 추상화·과잉 옵션·불가능 상황 처리 금지 |
+| **Surgical Changes** | 인접 코드 "개선" 금지, 작동 코드 건드리지 않기, 기존 스타일 유지 |
+| **Goal-Driven Execution** | 검증 가능한 성공 기준 정의, 테스트 먼저, 단계별 검증 |
 
-**`docs/rules/` 폴더의 모든 파일을 반드시 읽으세요.**  
-이 폴더에는 이 프로젝트의 구조, 아키텍처, 개발 워크플로우, AI 에이전트 가이드라인 등  
-**모든 작업의 기준**이 작성되어 있어 읽고 반드시 규칙 준수.
+### 3. 작업 전 반드시 사용자 확인 (Human-in-the-loop)
 
-### 2. Karpathy 원칙 (LLM 실수 감소)
-**Andrej Karpathy 의 관찰 기반 — LLM 이 자주 하는 실수를 줄이기 위한 4 가지 원칙**
+**다음 작업은 예외 없이 `question` 툴로 확인:**
+코드 생성/수정/삭제, 문서 변경, 스킬 실행, Speckit 단계 이동, 브랜치/커밋/PR.
 
-#### 2.1 Think Before Coding (가정 명시, 혼란 표출)
-- **가정 명시** — 불확실하면 추측하지 말고 질문
-- **다중 해석 제시** — 모호하면 선택하지 말고 옵션 제시
-- **단순한 접근법 제안** — 더 간단한 방법이 있으면 지적
-- **혼란 표출** — 이해 안 되는 부분 있으면 구현 전 질문
+**옵션 작성 원칙**: "진행/보류" 같은 메타 옵션 금지 → 작업 맥락에 맞는 실제 의사결정 분기로 제시.
+변경 작업은 **diff/요약을 먼저 보여주고** 확인 요청.
 
-#### 2.2 Simplicity First (최소 코드)
-- **요청된 기능만** — 그 이상 추가하지 않음
-- **단일 사용 코드에 추상화 금지**
-- **불필요한 유연성/설정 옵션 추가 금지**
-- **불가능한 상황의 오류 처리 금지**
-- **200 줄이면 50 줄로 줄일 수 있는지 항상 검토**
-
-#### 2.3 Surgical Changes (필요한 부분만 수정)
-- **인접 코드 "개선" 금지** — 요청되지 않은 리팩토링 금지
-- **고장 난 것만 고침** — 작동하는 코드 건드리지 않음
-- **기존 스타일 따름** — 내가 선호하는 스타일이 아니더라도
-- **내 변경으로 생긴 사용되지 않는 코드만 제거** — 기존 데드코드는 건드리지 않음
-
-#### 2.4 Goal-Driven Execution (검증 가능한 목표)
-- **성공 기준 정의** — "작동하게 만들기" 대신 구체적 검증 기준
-- **테스트 먼저** — 버그 수정 시 재현 테스트 작성 후 수정
-- **multi-step 계획 제시** — 각 단계별 검증 방법 명시
-  ```
-  1. [단계] → 검증: [확인 방법]
-  2. [단계] → 검증: [확인 방법]
-  ```
-
-### 3. 작업 진행 전 반드시 사용자 확인 (별표 규칙)
-
-**어떤 작업을 진행하기 전에도 반드시 사용자에게 확인하세요.**  
-- 코드 생성/수정/삭제 전
-- 문서 생성/수정 전
-- 스킬/에이전트 실행 전
-- Speckit 단계 이동 전 (`specify` → `plan` → `tasks` → `implement`)
-- 브랜치 생성/커밋/PR 전
-
-**확인 방식 (2가지 모두 사용)**:
-
-1. `question` 툴로 사용자에게 선택지를 제공하세요. 클릭 한 번으로 확인받을 수 있어 채팅 재입력이 불필요합니다.
-
-**옵션 작성 규칙**:
-- "진행/보류/질문" 같은 **고정 메타 옵션 금지**
-- 작업 맥락에 맞는 **실제 의사결정 분기**를 옵션으로 제시
-- 옵션 수는 2~4개, 각 옵션의 trade-off를 description에 명시
-- 변경 작업은 변경 내용(diff/요약)을 먼저 보여주고 확인 요청
-
-**예시**:
-
-기술 선택 시:
 ```
-options:
+options:  // 예시: 기술 선택
   - "NextAuth.js v5 (검증된 표준, 빠른 구축)"
   - "직접 JWT 구현 (학습 목적, 자유도 높음)"
   - "Clerk (외부 서비스, 가장 빠름)"
 ```
 
-파일 변경 시 (diff preview 후):
-```
-options:
-  - "그대로 적용"
-  - "일부 수정 후 적용"
-  - "취소"
-```
+### 4. SDD (Spec-Driven Development) 엄격 준수
 
-단계 이동 시:
-```
-options:
-  - "plan 단계로 진행"
-  - "specify 보완"
-  - "이전 단계로 되돌리기"
-```
+`specify → plan → tasks → implement` 순서를 엄격히 지킵니다.
 
-2. **텍스트 확인 (보조)**: 간단한 작업은 `⚡ 진행해도 될까요?` 형식으로 텍스트로 물어봐도 됩니다.
+**BLOCKING**: 스펙 없이 코드 작성 ❌ | 단계 건너뛰기 ❌ | plan 없이 tasks 생성 ❌
+**필수**: 단계 이동 전 사용자 확인 ✅ | `tasks.md` 체크박스 추적 (`[ ]`→`[x]`) ✅
+**예외**: 1-3줄 버그 수정, 타이포, 설정 변경만 SDD 생략 가능.
 
-**중요**: `question` 툴을 기본으로 사용하고, 사용자가 선택지를 클릭하면 바로 작업을 진행하세요.  
-확인 없이 절대 작업을 진행하지 마세요.
+상세: `docs/rules/02-development-workflow.md`
 
-```
-docs/rules/
-├── 01-project-structure.md    # 프로젝트 구조 및 아키텍처
-├── 02-development-workflow.md # SDD + Speckit + TDD 워크플로우
-├── 03-ai-agent-guidelines.md  # AI 에이전트 사용 가이드라인
-└── 04-change-log.md           # 변경 이력 관리 가이드
-```
+### 5. 병렬 처리 및 서브 에이전트 위임
 
-> ⚠️ **이 파일들을 읽지 않고는 어떤 작업도 시작하지 마세요.**
+2개 이상의 독립 작업은 서브 에이전트에 병렬 위임. 위임 시 4가지 필수 포함:
+**GOAL** (성공 기준) / **파일 경로 및 제약사항** / **기존 패턴 참조** / **IN-OUT scope**.
+
+### 6. 하네스 엔지니어링 원칙 (2026)
+
+**3단계 실행 루프**: `Gather Context → Take Action → Verify Results` — 매 작업마다 verify 단계 명시.
+
+| 구성요소 | 책임 |
+|---|---|
+| **Context Engineering** | 컨텍스트 압축, Progressive Disclosure (`05-context-management.md`) |
+| **Verification Loop** | 변경 후 테스트/타입체크/실제 실행으로 결과 검증 |
+| **Permission Gating** | 위험 작업(rm -rf, force push, DB drop)은 사용자 명시 동의 필요 |
+| **Memory Tiering** | `CLAUDE.md`(짧게) → `docs/rules/`(상세) → `docs/spec/`(작업별) |
+
+### 7. 변경 이력 관리
+
+모든 변경사항은 `docs/changelog/YYYY-MM-DD-{type}-{short-id}.md`로 기록.
+상세: `docs/rules/04-change-log.md`
 
 ---
 
@@ -123,75 +83,19 @@ docs/rules/
 |---|---|
 | 프로젝트 구조 이해 | `docs/rules/01-project-structure.md` |
 | 기능 개발 시작 | `docs/rules/02-development-workflow.md` |
-| AI 스킬/에이전트 사용 | `docs/rules/03-ai-agent-guidelines.md` |
-| 변경 이력 확인 | `docs/rules/04-change-log.md` + `docs/changelog/` |
-
----
+| 스킬/에이전트 사용 | `docs/rules/03-ai-agent-guidelines.md` |
+| 변경 이력 기록 | `docs/rules/04-change-log.md` |
+| 컨텍스트 관리 | `docs/rules/05-context-management.md` |
 
 ## 📂 프로젝트 구조 개요
 
 ```
-haness_test/
-├── CLAUDE.md                  # ← 여기 (진입점)
+haness/
+├── CLAUDE.md                  # ← 여기 (하네스 루트)
 ├── docs/
-│   ├── rules/                 # 절대 규칙 (반드시 읽을 것)
-│   ├── spec/                  # Speckit 스펙 파일들
+│   ├── rules/                 # 절대 규칙 (5개 파일)
+│   ├── spec/                  # Speckit 스펙 (기능별 디렉토리)
 │   └── changelog/             # 변경 이력 로그
-└── src/                       # 소스 코드 (향후 생성)
+├── src/                       # 소스 코드
+└── tests/                     # 테스트
 ```
-
----
-
-### 4. SDD (Spec-Driven Development) 워크플로우 무조건 준수
-
-**모든 기능 개발은 반드시 Speckit 4단계 워크플로우를 따라야 합니다.**  
-코드를 직접 작성하는 것은 금지이며, 반드시 아래 순서를 거쳐야 합니다:
-
-```
-1. /speckit.specify  → docs/spec/{feature}/spec.md    (기능 명세)
-2. /speckit.plan     → docs/spec/{feature}/plan.md    (구현 계획)
-3. /speckit.tasks    → docs/spec/{feature}/tasks.md   (작업 분해)
-4. /speckit.implement → src/                          (실제 구현)
-```
-
-**BLOCKING 규칙**:
-- ❌ **스펙 없이 코드 작성 금지** — `spec.md`가 없으면 `src/`에 코드 작성 불가
-- ❌ **단계 건너뛰기 금지** — specify → plan → tasks → implement 순서 엄격 준수
-- ❌ **plan 없이 구현 금지** — `plan.md` 승인 전 `tasks.md` 생성 불가
-- ✅ **단계 이동 전 반드시 사용자 확인** — 각 단계 완료 후 다음 단계로 넘어가기 전 `question` 툴로 확인
-- ✅ **tasks.md 체크박스 추적** — 구현 중 `[ ]` → `[x]`상태가 되었는지
-
-**예외**: 단순 버그 수정 (1-3줄), 타이포 수정, 설정 파일 변경만 SDD 생략 가능
-
-**상세 가이드**: `docs/rules/02-development-workflow.md`
-
----
-
-### 5. 병렬 처리 및 서브 에이전트 위임
-
-**독립적인 작업은 항상 서브 에이전트에 병렬로 위임하세요.**  
-- 2개 이상의 독립 작업 → `task()` 로 병렬 위임
-- 컨텍스트 절약을 위해 서브 에이전트에 명확한 범위/파일 경로/기존 패턴 전달
-- 직접 구현하지 않고 프롬프트 작성에 집중
-
-**위임 시 필수 포함 사항**:
-- GOAL (성공 기준)
-- 파일 경로 및 제약사항
-- 기존 패턴 참조 파일
-- 명확한 범위 경계 (IN scope / OUT of scope)
-
----
-
-### 6. 변경 이력 관리 규칙
-
-**모든 변경사항은 `docs/changelog/`에 기록**
-상세가이드 참고
-
-**상세 가이드**: `docs/rules/04-change-log.md`
-
----
-
-## 🔗 전역 규칙
-
-이 프로젝트는 전역 `AGENTS.md`(C:\Users\82304416\.config\opencode\AGENTS.md)를 항상 참조합니다.  
-전역 규칙과 충돌하는 경우 **전역 규칙이 우선**합니다.

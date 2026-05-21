@@ -65,29 +65,9 @@
 
 ## ⚠️ 스킬 사용 규칙
 
-**반드시 준수:**
-
-1. **사용 전 확인**: 스킬을 실행하기 전 사용자에게 반드시 확인
-
-   **`question` 툴 사용 (기본)**:
-   ```
-   question(questions=[{
-     question: "📌 [스킬명] 스킬을 실행합니다. 🎯 목적: [사용 목적]",
-     header: "스킬 실행 확인",
-     options: [
-       { label: "⚡ 진행하기", description: "스킬을 실행합니다" },
-       { label: "⏸️ 보류", description: "일단 대기합니다" },
-       { label: "💬 질문 있음", description: "추가 질문이 있습니다" }
-     ]
-   }])
-   ```
-
-   **텍스트 확인 (보조)**: 간단한 작업은 아래 형식으로 물어봐도 됩니다.
-   - 📌 스킬명
-   - 📋 설명
-   - 🎯 사용 목적
-   - ⚡ "진행해도 될까요?" 로 마무리
-
-2. **Domain Matching**: 작업의 도메인과 가장 잘 맞는 스킬 선택
+1. **사용 전 확인**: 스킬 실행 전 `question` 툴로 사용자 확인 (옵션 작성 원칙은 `CLAUDE.md` §3 참조).
+   메타 옵션("진행/보류/질문") 대신 **실제 의사결정 분기**(스킬 A vs B, 범위 축소 vs 전체)로 제시.
+2. **Domain Matching**: 작업 도메인과 가장 잘 맞는 스킬 선택
 3. **User Skills Priority**: 사용자 설치 스킬이 기본 스킬보다 우선
-4. **유연한 활용**: Speckit 워크플로우에 국한되지 않고, superpowers/ECC/gstack 스킬을 상황에 맞게 활용
+4. **유연한 활용**: Speckit에 국한되지 않고 superpowers/ECC/gstack 스킬을 상황에 맞게 활용
+5. **Net-zero 원칙**: 새 스킬을 추가할 때 사용하지 않는 스킬은 이 목록에서 제거 (Instruction overload 방지)
