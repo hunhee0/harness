@@ -44,7 +44,7 @@ LLM 기반 코딩 에이전트는 **모델 능력만큼이나 "하네스(harness
 
 ### B. 기존 운영 코드 (ITO) 에 적용 시
 
-1. 기존 레포 루트에 `CLAUDE.md`, `docs/rules/`, `.claude/skills/`, `docs/changelog/` 를 **병합 도입**
+1. 기존 레포 루트에 `CLAUDE.md`, `docs/rules/`, `.claude/skills/` 를 **병합 도입**
 2. **현재 소스코드를 분석해 `docs/rules/01-project-structure.md`를 최신화**
    - 실제 디렉토리 구조, 사용 중인 언어/프레임워크/테스트 도구 등 반영
    - 잠정(Tentative) 라벨 제거, 실제 운영 스택 명시
@@ -62,17 +62,17 @@ LLM 기반 코딩 에이전트는 **모델 능력만큼이나 "하네스(harness
 |---|---|
 | **Claude Code** | AI 코딩 에이전트 CLI |
 | **Git 2.30+** | 버전 관리 |
-| **rtk-ai** | LLM 토큰 사용량 60-90% 절감 (CLI proxy) |
 
 ### 권장 스킬 (역할별 분리)
 
 | 스킬 팩 | 출처 | 주요 역할 |
 |---|---|---|
-| **superpowers** | (별도 설치) | TDD, 디버깅, 코드리뷰, 서브에이전트 위임 |
-| **speckit** | 본 프로젝트 `.claude/skills/speckit-*` | SDD 4단계 워크플로우 |
+| **superpowers** | `obra/superpowers` | TDD, 디버깅, 코드리뷰, 서브에이전트 위임 |
+| **speckit** | `github/spec-kit` | SDD 4단계 워크플로우 |
 | **gstack** | `garrytan/gstack` | 가상 개발팀(CEO/Eng Mgr/QA/Ship) 슬래시 명령 |
 | **ECC** | `affaan-m/everything-claude-code` | Python/FastAPI 패턴, 테스트, 코딩 표준 |
 | **caveman** | `JuliusBrussee/caveman` (본 프로젝트 `.claude/skills/caveman/`) | 응답 압축 모드 (토큰 ~75% 절감) |
+| **rtk-ai** | `rtk-ai/rtk` | LLM 토큰 사용량 60-90% 절감 (CLI proxy) |
 
 상세 매핑: `docs/rules/03-ai-agent-guidelines.md`
 
@@ -87,13 +87,17 @@ rtk init -g                # Claude Code 전역 통합
 # 2) 전역 스킬 설치 (~/.claude/skills/)
 mkdir -p ~/.claude/skills && cd ~/.claude/skills
 
-git clone https://github.com/garrytan/gstack.git
-git clone https://github.com/affaan-m/everything-claude-code.git ECC
-git clone https://github.com/JuliusBrussee/caveman.git
-# superpowers / speckit 은 별도 공식 가이드 참조
+# 별도 공식 가이드 참조
+https://github.com/garrytan/gstack.git
+https://github.com/affaan-m/everything-claude-code.git
+https://github.com/JuliusBrussee/caveman.git
+https://github.com/obra/superpowers
+https://github.com/github/spec-kit
+https://github.com/multica-ai/andrej-karpathy-skills
+https://github.com/rtk-ai/rtk
 
-# 3) 본 레포지토리는 .claude/skills/caveman/ 와 .claude/skills/speckit-* 를
-#    프로젝트 로컬로 이미 포함합니다 — 추가 설치 없이 사용 가능.
+# 3) 본 레포지토리는 .claude/skills/speckit-* 를
+#    프로젝트 로컬로 이미 포함합니다 — 추가 설치 없이 사용 가능(공식 가이드에서 설치 권장).
 ```
 
 > ⚠️ 정확한 설치 절차는 각 리포지토리의 최신 README 가 우선합니다.
@@ -134,8 +138,6 @@ git clone https://github.com/JuliusBrussee/caveman.git
 | Simplicity First | 요청된 기능만, 과잉 추상화 금지 |
 | Surgical Changes | 인접 코드 "개선" 금지, 작동 코드 미수정 |
 | Goal-Driven Execution | 검증 가능한 성공 기준, 단계별 검증 |
-
-> 원전: Andrej Karpathy, X (2026-01-26).
 
 ### 하네스 엔지니어링 원칙
 
@@ -190,9 +192,3 @@ haness/
 - Anthropic Claude Code 베스트 프랙티스 (Gather → Action → Verify)
 - HumanLayer — *Writing a good CLAUDE.md*
 - Augment Code — *Harness Engineering for AI Coding Agents*
-
----
-
-## 📄 라이선스 / 사용
-
-이 명세서는 사내 표준화 및 학습 목적입니다. 외부 공개·배포 시 별도 결정.
