@@ -1,83 +1,70 @@
-# 01. 프로젝트 구조
+# 01-프로젝트 구조 및 아키텍처
 
-## 폴더 구조
+**작성일**: 2026-05-14  
+**최종 수정**: 2026-05-15
 
+---
 
-
-
+## 📂 프로젝트 구조
 
 ```
-haness/
-├── CLAUDE.md              # 진입점 (라우팅)
+haness_test/
+├── CLAUDE.md
+├── AGENTS.md
+├── pyproject.toml
+├── .env.example
+├── .gitignore
 ├── docs/
-│   ├── rules/             # 절대 규칙 (이 폴더)
-│   ├── spec/              # SDD 산출물
-│   │   └── {NNN-feature}/ # spec.md, plan.md, tasks.md
-│   └── changelog/         # YYYY-MM-DD-{type}-{slug}.md
+│   ├── rules/
+│   ├── spec/
+│   └── changelog/
 ├── src/
-│   ├── routers/           # FastAPI 엔드포인트
-│   ├── schemas/           # Pydantic 모델
-│   ├── services/          # 비즈니스 로직
-│   ├── config/            # 환경 설정
-│   └── main.py            # FastAPI 앱 진입점
-├── tests/                 # src와 동일 구조 (test_*.py)
-├── pyproject.toml         # Poetry 의존성
-└── .env.example           # 환경 변수 템플릿
+│   ├── __init__.py
+│   ├── main.py              # FastAPI 진입점
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── deps.py          # 공유 의존성 주입
+│   │   ├── router.py        # 라우터 어그리게이터
+│   │   └── v1/
+│   │       ├── __init__.py
+│   │       └── endpoints/
+│   │           ├── __init__.py
+│   │           └── health.py
+│   ├── core/
+│   │   ├── __init__.py
+│   │   └── config.py        # pydantic-settings 설정
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── common.py        # 공통 응답 스키마
+│   │   └── health.py        # health 응답 스키마
+│   └── services/
+│       ├── __init__.py
+│       └── health_service.py
+└── tests/
+    ├── __init__.py
+    ├── conftest.py
+    ├── test_config.py
+    ├── test_schemas.py
+    ├── api/
+    │   ├── __init__.py
+    │   └── test_health.py
+    └── services/
+        ├── __init__.py
+        └── test_health_service.py
 ```
 
+## 🏗️ 아키텍처
 
+**확정일자**: 2026-05-15
 
+- **기술 스택**: Python 3.11+, FastAPI, Uvicorn, pydantic-settings
+- **Dependency 관리**: Poetry
+- **테스트**: pytest + httpx
+- **린팅**: ruff
 
+### 아키텍처 원칙
 
-
-
-
-
-## 계층 책임
-
-| 계층 | 책임 | 허용 의존 |
-|---|---|---|
-| `routers/` | HTTP I/O, 요청 검증 위임, 응답 직렬화 | `schemas/`, `services/` |
-| `schemas/` | 데이터 모델, 검증 규칙 (Pydantic) | (없음) |
-| `services/` | 비즈니스 로직, 외부 호출 | `schemas/`, `config/` |
-| `config/` | 환경 변수, 상수, settings | (없음) |
-
-## 의존 방향 (BLOCKING)
-
-
-
-
-
-```
-routers → services → schemas
-   ↓         ↓
-schemas   config
-```
-
-
-
-
-
-
-
-- `schemas`는 어디서든 import 가능
-- `services`는 `routers` import 금지 (역방향 의존 금지)
-- 순환 의존 발견 시 즉시 리팩터링
-
-## 명명 규칙
-
-| 종류 | 규칙 | 예 |
-|---|---|---|
-| 파일 | `snake_case.py` | `user_router.py` |
-| 클래스 | `PascalCase` | `UserService` |
-| 함수/변수 | `snake_case` | `get_user_by_id` |
-| 상수 | `UPPER_SNAKE_CASE` | `MAX_RETRY` |
-| 라우터 | `{resource}_router.py` | `health_router.py` |
-| 스키마 | `{resource}_schema.py` | `user_schema.py` |
-| 서비스 | `{resource}_service.py` | `auth_service.py` |
-| 테스트 | `test_{module}.py` | `test_user_service.py` |
-
-## 폴더 추가 시 규칙
-
-- 새 폴더는 `__init__.py` 포함
-- 책임이 위 4계층 어디에도 안 들어가면 → 신규 계층 추가 전에 사용자 확인 필수
+- **순환 참조 금지**: 계층 간 단방향 의존성 유지
+- **단일 책임**: 각 모듈은 하나의 명확한 책임만 가짐
+- **Thin Router → Fat Service**: 라우터는 HTTP 처리만, 비즈니스 로직은 services/로 분리
+- **SDD 준수**: 스펙 → 계획 → 태스크 → 구현 순서 엄격 준수
