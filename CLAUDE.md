@@ -19,6 +19,8 @@
 | `03-ai-agent-guidelines.md` | AI 에이전트/스킬 사용 가이드라인 |
 | `04-change-log.md` | 변경 이력 관리 가이드 |
 | `05-context-management.md` | 컨텍스트/메모리 관리 (하네스 엔지니어링) |
+| `06-branch-strategy.md` | 브랜치 전략 및 PR 규칙 |
+| `07-error-recovery.md` | 에러 복구 및 롤백 절차 |
 
 ### 2. Karpathy 4원칙 (LLM 실수 감소)
 
@@ -70,7 +72,7 @@ options:  // 예시: 기술 선택
 | **Context Engineering** | 컨텍스트 압축, Progressive Disclosure (`05-context-management.md`) |
 | **Verification Loop** | 변경 후 테스트/타입체크/실제 실행으로 결과 검증 |
 | **Permission Gating** | 위험 작업(rm -rf, force push, DB drop)은 사용자 명시 동의 필요 |
-| **Memory Tiering** | `CLAUDE.md`(짧게) → `docs/rules/`(상세) → `docs/spec/`(작업별) |
+| **Memory Tiering** | `CLAUDE.md`(짧게) → `docs/rules/`(상세) → `docs/spec/`(작업별) → `.specify/memory/constitution.md`(프로젝트 원칙) |
 
 ### 7. 변경 이력 관리
 
@@ -88,6 +90,25 @@ options:  // 예시: 기술 선택
 - **자동 해제 조건**: `question` 툴 옵션·설명 / 변경 diff·요약 제시
 - **적용 제외**: 코드 / 커밋 메시지 / 문서(CLAUDE.md, docs/, changelog) — 정상 작성
 
+### 9. 하네스 진입점 (orchestrator + adapt)
+
+- **기능 개발**: `harness-orchestrator` 스킬 자동 사용.
+  트리거: "기능 만들어줘", "구현해줘", "개발 시작", "새 기능", "이어서 진행", "스펙 작성", "재실행", "업데이트", "수정", "보완"
+  파이프라인: `planner → implementer → reviewer → qa`
+
+- **하네스 onboarding (1회)**: `harness-adapt` 스킬 자동 사용.
+  트리거: "하네스 적용해줘", "프로젝트 분석해서 하네스 갱신", "하네스 onboarding", "기존 코드에 맞춰 하네스 수정", "하네스 init"
+  setup으로 파일 복사 직후 새 세션에서 호출. 코드 분석 → CLAUDE.md / 01-project-structure.md / 03-ai-agent-guidelines.md 자동 수정.
+
+**하네스 변경 이력** (Phase 5-4 권장 형식):
+
+| 날짜 | 변경 | 대상 | 사유 |
+|------|------|------|------|
+| 2026-05-26 | 초기 하네스 구성 | agents 4개 + harness-orchestrator + rules 06/07 + setup 스크립트 | 다중 프로젝트 적용 기반 |
+| 2026-05-26 | 보완 (재호출 지침, Agent 호출 형식, 에러 핸들링, caveman 경계) | orchestrator + agents + setup.sh + constitution 가이드 | 셀프 리뷰 결과 |
+| 2026-05-26 | 이식 가이드 + opencode 변환 가이드 | docs/INSTALL.md + README.md | 다른 프로젝트·다른 CLI 적용 안내 |
+| 2026-05-26 | harness-adapt 스킬 신규 (자동 onboarding) | .claude/skills/harness-adapt/ + CLAUDE.md Rule 9 + 03-ai-agent-guidelines.md | 기존 프로젝트 적용 자동화 |
+
 ---
 
 ## 🧭 빠른 안내
@@ -95,20 +116,29 @@ options:  // 예시: 기술 선택
 | 작업 | 참고 문서 |
 |---|---|
 | 프로젝트 구조 이해 | `docs/rules/01-project-structure.md` |
-| 기능 개발 시작 | `docs/rules/02-development-workflow.md` |
+| 기능 개발 시작 | `harness-orchestrator` 스킬 (→ `docs/rules/02-development-workflow.md`) |
 | 스킬/에이전트 사용 | `docs/rules/03-ai-agent-guidelines.md` |
 | 변경 이력 기록 | `docs/rules/04-change-log.md` |
 | 컨텍스트 관리 | `docs/rules/05-context-management.md` |
+| 브랜치/PR | `docs/rules/06-branch-strategy.md` |
+| 에러 복구 | `docs/rules/07-error-recovery.md` |
 
 ## 📂 프로젝트 구조 개요
 
 ```
 haness/
-├── CLAUDE.md                  # ← 여기 (하네스 루트)
+├── CLAUDE.md                        # ← 여기 (하네스 루트)
+├── .claude/
+│   ├── agents/                      # 에이전트 팀 (planner/implementer/reviewer/qa)
+│   └── skills/                      # 스킬 (harness-orchestrator 등)
 ├── docs/
-│   ├── rules/                 # 절대 규칙 (5개 파일)
-│   ├── spec/                  # Speckit 스펙 (기능별 디렉토리)
-│   └── changelog/             # 변경 이력 로그
-├── src/                       # 소스 코드
-└── tests/                     # 테스트
+│   ├── rules/                       # 절대 규칙 (7개 파일)
+│   ├── spec/                        # Speckit 스펙 (기능별 디렉토리)
+│   └── changelog/                   # 변경 이력 로그
+├── .specify/
+│   └── memory/constitution.md       # 프로젝트 원칙 (시작 시 작성)
+├── src/                             # 소스 코드
+├── tests/                           # 테스트
+├── setup.ps1                        # 하네스 이식 스크립트 (Windows)
+└── setup.sh                         # 하네스 이식 스크립트 (Mac/Linux)
 ```
