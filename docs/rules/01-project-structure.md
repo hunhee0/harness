@@ -20,7 +20,7 @@ haness/
 
 ## 🏗️ 잠정 아키텍처
 
-> ⚠️ 아래 결정은 **잠정(provisional)**입니다. 실제 프로젝트 시작 시 `/speckit.specify` 단계에서 재검토합니다.
+> ⚠️ 아래 결정은 **잠정(provisional)**입니다. 실제 프로젝트 시작 시 `/speckit-specify` 단계에서 재검토합니다.
 > FastAPI는 **예시일 뿐**이며, 실제 도메인이 정해지면 다른 스택(Django, Node.js, Next.js, Go 등)이 선택될 수 있습니다.
 
 ### 잠정 기술 스택 후보 (FastAPI 예시)

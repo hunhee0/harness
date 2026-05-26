@@ -1,191 +1,190 @@
 ---
 name: speckit-analyze
-description: Perform a non-destructive cross-artifact consistency and quality analysis
-  across spec.md, plan.md, and tasks.md after task generation.
-compatibility: Requires spec-kit project structure with .specify/ directory
+description: 태스크 생성 이후 spec.md, plan.md, tasks.md 전반에 걸쳐 비파괴적 일관성 및 품질 분석 수행.
+compatibility: .specify/ 디렉토리가 있는 spec-kit 프로젝트 구조 필요
 metadata:
   author: github-spec-kit
   source: templates/commands/analyze.md
 disable-model-invocation: true
 ---
 
-## User Input
+## 사용자 입력
 
 ```text
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+진행 전 반드시 사용자 입력을 고려하세요 (비어있지 않은 경우).
 
-## Goal
+## 목표
 
-Identify inconsistencies, duplications, ambiguities, and underspecified items across the three core artifacts (`spec.md`, `plan.md`, `tasks.md`) before implementation. This command MUST run only after `/speckit.tasks` has successfully produced a complete `tasks.md`.
+구현 전에 세 핵심 아티팩트(`spec.md`, `plan.md`, `tasks.md`) 전반의 불일치, 중복, 모호성, 미명세 항목을 식별합니다. 이 명령은 `/speckit-tasks`가 완전한 `tasks.md`를 성공적으로 생성한 이후에만 실행해야 합니다.
 
-## Operating Constraints
+## 운영 제약
 
-**STRICTLY READ-ONLY**: Do **not** modify any files. Output a structured analysis report. Offer an optional remediation plan (user must explicitly approve before any follow-up editing commands would be invoked manually).
+**완전 읽기 전용**: 파일을 **수정하지 않습니다**. 구조화된 분석 리포트를 출력합니다. 선택적 수정 계획을 제공할 수 있으나 (사용자가 명시적으로 승인해야 이후 편집 명령이 수동으로 호출됩니다).
 
-**Constitution Authority**: The project constitution (`.specify/memory/constitution.md`) is **non-negotiable** within this analysis scope. Constitution conflicts are automatically CRITICAL and require adjustment of the spec, plan, or tasks—not dilution, reinterpretation, or silent ignoring of the principle. If a principle itself needs to change, that must occur in a separate, explicit constitution update outside `/speckit.analyze`.
+**헌법 권한**: 프로젝트 헌법(`.specify/memory/constitution.md`)은 이 분석 범위 내에서 **협상 불가**입니다. 헌법 충돌은 자동으로 CRITICAL이며 스펙, 플랜, 태스크 조정이 필요합니다—원칙을 희석하거나 재해석하거나 묵인하지 마세요. 원칙 자체를 변경해야 한다면 `/speckit-analyze` 외부에서 별도의 명시적 헌법 업데이트를 통해 진행해야 합니다.
 
-## Execution Steps
+## 실행 단계
 
-### 1. Initialize Analysis Context
+### 1. 분석 컨텍스트 초기화
 
-Run `.specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` once from repo root and parse JSON for FEATURE_DIR and AVAILABLE_DOCS. Derive absolute paths:
+저장소 루트에서 `.specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks`를 한 번 실행하고 JSON에서 FEATURE_DIR과 AVAILABLE_DOCS를 파싱합니다. 절대 경로 도출:
 
 - SPEC = FEATURE_DIR/spec.md
 - PLAN = FEATURE_DIR/plan.md
 - TASKS = FEATURE_DIR/tasks.md
 
-Abort with an error message if any required file is missing (instruct the user to run missing prerequisite command).
-For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
+필요한 파일이 없으면 오류 메시지와 함께 중단합니다 (누락된 전제 명령을 실행하도록 사용자에게 안내).
+args에 'I'm Groot'처럼 작은따옴표가 있는 경우 이스케이프 문법 사용: 예) 'I'\''m Groot' (또는 가능하면 큰따옴표: "I'm Groot").
 
-### 2. Load Artifacts (Progressive Disclosure)
+### 2. 아티팩트 로드 (점진적 공개)
 
-Load only the minimal necessary context from each artifact:
+각 아티팩트에서 필요한 최소 컨텍스트만 로드:
 
-**From spec.md:**
+**spec.md에서:**
 
-- Overview/Context
-- Functional Requirements
-- Success Criteria (measurable outcomes — e.g., performance, security, availability, user success, business impact)
-- User Stories
-- Edge Cases (if present)
+- 개요/컨텍스트
+- 기능 요구사항
+- 성공 기준 (측정 가능한 결과 — 성능, 보안, 가용성, 사용자 성공, 비즈니스 영향)
+- 사용자 스토리
+- 엣지 케이스 (있는 경우)
 
-**From plan.md:**
+**plan.md에서:**
 
-- Architecture/stack choices
-- Data Model references
-- Phases
-- Technical constraints
+- 아키텍처/스택 선택
+- 데이터 모델 참조
+- 단계
+- 기술 제약
 
-**From tasks.md:**
+**tasks.md에서:**
 
-- Task IDs
-- Descriptions
-- Phase grouping
-- Parallel markers [P]
-- Referenced file paths
+- 태스크 ID
+- 설명
+- 단계 그룹화
+- 병렬 마커 [P]
+- 참조된 파일 경로
 
-**From constitution:**
+**헌법에서:**
 
-- Load `.specify/memory/constitution.md` for principle validation
+- 원칙 검증을 위해 `.specify/memory/constitution.md` 로드
 
-### 3. Build Semantic Models
+### 3. 의미론적 모델 구축
 
-Create internal representations (do not include raw artifacts in output):
+내부 표현 생성 (출력에 원본 아티팩트 포함 금지):
 
-- **Requirements inventory**: For each Functional Requirement (FR-###) and Success Criterion (SC-###), record a stable key. Use the explicit FR-/SC- identifier as the primary key when present, and optionally also derive an imperative-phrase slug for readability (e.g., "User can upload file" → `user-can-upload-file`). Include only Success Criteria items that require buildable work (e.g., load-testing infrastructure, security audit tooling), and exclude post-launch outcome metrics and business KPIs (e.g., "Reduce support tickets by 50%").
-- **User story/action inventory**: Discrete user actions with acceptance criteria
-- **Task coverage mapping**: Map each task to one or more requirements or stories (inference by keyword / explicit reference patterns like IDs or key phrases)
-- **Constitution rule set**: Extract principle names and MUST/SHOULD normative statements
+- **요구사항 목록**: 각 기능 요구사항(FR-###)과 성공 기준(SC-###)에 대해 안정적인 키 기록. 명시적 FR-/SC- 식별자가 있으면 기본 키로 사용하고 가독성을 위해 명령형 구문 슬러그도 선택적으로 도출 (예: "User can upload file" → `user-can-upload-file`). 빌드 작업이 필요한 성공 기준(로드 테스트 인프라, 보안 감사 도구 등)만 포함하고 출시 후 결과 지표와 비즈니스 KPI는 제외.
+- **사용자 스토리/액션 목록**: 수락 기준이 있는 개별 사용자 액션
+- **태스크 커버리지 매핑**: 각 태스크를 하나 이상의 요구사항 또는 스토리에 매핑 (키워드/명시적 참조 패턴으로 추론)
+- **헌법 규칙 세트**: 원칙명과 MUST/SHOULD 규범 문장 추출
 
-### 4. Detection Passes (Token-Efficient Analysis)
+### 4. 탐지 패스 (토큰 효율 분석)
 
-Focus on high-signal findings. Limit to 50 findings total; aggregate remainder in overflow summary.
+고신호 발견에 집중. 총 50개 발견으로 제한; 나머지는 오버플로 요약에 집계.
 
-#### A. Duplication Detection
+#### A. 중복 탐지
 
-- Identify near-duplicate requirements
-- Mark lower-quality phrasing for consolidation
+- 유사 중복 요구사항 식별
+- 통합을 위해 낮은 품질 표현 표시
 
-#### B. Ambiguity Detection
+#### B. 모호성 탐지
 
-- Flag vague adjectives (fast, scalable, secure, intuitive, robust) lacking measurable criteria
-- Flag unresolved placeholders (TODO, TKTK, ???, `<placeholder>`, etc.)
+- 측정 가능한 기준이 없는 모호한 형용사(fast, scalable, secure, intuitive, robust) 표시
+- 미해결 플레이스홀더(TODO, TKTK, ???, `<placeholder>` 등) 표시
 
-#### C. Underspecification
+#### C. 미명세
 
-- Requirements with verbs but missing object or measurable outcome
-- User stories missing acceptance criteria alignment
-- Tasks referencing files or components not defined in spec/plan
+- 동사는 있지만 목적어나 측정 가능한 결과가 없는 요구사항
+- 수락 기준 정렬이 없는 사용자 스토리
+- spec/plan에 정의되지 않은 파일 또는 컴포넌트를 참조하는 태스크
 
-#### D. Constitution Alignment
+#### D. 헌법 정렬
 
-- Any requirement or plan element conflicting with a MUST principle
-- Missing mandated sections or quality gates from constitution
+- MUST 원칙과 충돌하는 요구사항 또는 플랜 요소
+- 헌법의 필수 섹션 또는 품질 게이트 누락
 
-#### E. Coverage Gaps
+#### E. 커버리지 갭
 
-- Requirements with zero associated tasks
-- Tasks with no mapped requirement/story
-- Success Criteria requiring buildable work (performance, security, availability) not reflected in tasks
+- 관련 태스크가 없는 요구사항
+- 매핑된 요구사항/스토리가 없는 태스크
+- 태스크에 반영되지 않은 빌드 작업이 필요한 성공 기준 (성능, 보안, 가용성)
 
-#### F. Inconsistency
+#### F. 불일치
 
-- Terminology drift (same concept named differently across files)
-- Data entities referenced in plan but absent in spec (or vice versa)
-- Task ordering contradictions (e.g., integration tasks before foundational setup tasks without dependency note)
-- Conflicting requirements (e.g., one requires Next.js while other specifies Vue)
+- 용어 이탈 (파일 간에 같은 개념이 다르게 명명됨)
+- plan에는 있지만 spec에 없는 데이터 엔티티 (또는 반대)
+- 태스크 순서 충돌 (예: 의존성 주석 없이 기반 설정 태스크 전에 통합 태스크)
+- 충돌하는 요구사항 (예: 하나는 Next.js, 다른 하나는 Vue 명시)
 
-### 5. Severity Assignment
+### 5. 심각도 할당
 
-Use this heuristic to prioritize findings:
+발견 우선순위를 위해 다음 기준 사용:
 
-- **CRITICAL**: Violates constitution MUST, missing core spec artifact, or requirement with zero coverage that blocks baseline functionality
-- **HIGH**: Duplicate or conflicting requirement, ambiguous security/performance attribute, untestable acceptance criterion
-- **MEDIUM**: Terminology drift, missing non-functional task coverage, underspecified edge case
-- **LOW**: Style/wording improvements, minor redundancy not affecting execution order
+- **CRITICAL**: 헌법 MUST 위반, 핵심 스펙 아티팩트 누락, 기준 기능을 차단하는 커버리지 제로 요구사항
+- **HIGH**: 중복 또는 충돌 요구사항, 모호한 보안/성능 속성, 테스트 불가능한 수락 기준
+- **MEDIUM**: 용어 이탈, 누락된 비기능 태스크 커버리지, 미명세 엣지 케이스
+- **LOW**: 스타일/표현 개선, 실행 순서에 영향 없는 사소한 중복
 
-### 6. Produce Compact Analysis Report
+### 6. 간결한 분석 리포트 생성
 
-Output a Markdown report (no file writes) with the following structure:
+다음 구조의 Markdown 리포트 출력 (파일 쓰기 없음):
 
-## Specification Analysis Report
+## 명세 분석 리포트
 
-| ID | Category | Severity | Location(s) | Summary | Recommendation |
-|----|----------|----------|-------------|---------|----------------|
-| A1 | Duplication | HIGH | spec.md:L120-134 | Two similar requirements ... | Merge phrasing; keep clearer version |
+| ID | 카테고리 | 심각도 | 위치 | 요약 | 권고 |
+|----|----------|--------|------|------|------|
+| A1 | 중복 | HIGH | spec.md:L120-134 | 유사한 요구사항 두 개 ... | 표현 통합; 더 명확한 버전 유지 |
 
-(Add one row per finding; generate stable IDs prefixed by category initial.)
+(발견당 한 행; 카테고리 이니셜로 접두된 안정적 ID 생성.)
 
-**Coverage Summary Table:**
+**커버리지 요약 테이블:**
 
-| Requirement Key | Has Task? | Task IDs | Notes |
-|-----------------|-----------|----------|-------|
+| 요구사항 키 | 태스크 있음? | 태스크 ID | 비고 |
+|------------|------------|----------|------|
 
-**Constitution Alignment Issues:** (if any)
+**헌법 정렬 이슈:** (있는 경우)
 
-**Unmapped Tasks:** (if any)
+**매핑되지 않은 태스크:** (있는 경우)
 
-**Metrics:**
+**지표:**
 
-- Total Requirements
-- Total Tasks
-- Coverage % (requirements with >=1 task)
-- Ambiguity Count
-- Duplication Count
-- Critical Issues Count
+- 총 요구사항
+- 총 태스크
+- 커버리지 % (태스크가 1개 이상인 요구사항)
+- 모호성 수
+- 중복 수
+- 크리티컬 이슈 수
 
-### 7. Provide Next Actions
+### 7. 다음 액션 제공
 
-At end of report, output a concise Next Actions block:
+리포트 끝에 간결한 다음 액션 블록 출력:
 
-- If CRITICAL issues exist: Recommend resolving before `/speckit.implement`
-- If only LOW/MEDIUM: User may proceed, but provide improvement suggestions
-- Provide explicit command suggestions: e.g., "Run /speckit.specify with refinement", "Run /speckit.plan to adjust architecture", "Manually edit tasks.md to add coverage for 'performance-metrics'"
+- CRITICAL 이슈가 있는 경우: `/speckit-implement` 전에 해결 권장
+- LOW/MEDIUM만 있는 경우: 진행 가능하지만 개선 제안 제공
+- 명시적 명령 제안: 예) "개선과 함께 /speckit-specify 실행", "/speckit-plan 실행하여 아키텍처 조정", "tasks.md를 수동 편집하여 'performance-metrics' 커버리지 추가"
 
-### 8. Offer Remediation
+### 8. 수정 제안
 
-Ask the user: "Would you like me to suggest concrete remediation edits for the top N issues?" (Do NOT apply them automatically.)
+사용자에게 묻기: "상위 N개 이슈에 대해 구체적인 수정 편집을 제안할까요?" (자동으로 적용하지 않습니다.)
 
-## Operating Principles
+## 운영 원칙
 
-### Context Efficiency
+### 컨텍스트 효율성
 
-- **Minimal high-signal tokens**: Focus on actionable findings, not exhaustive documentation
-- **Progressive disclosure**: Load artifacts incrementally; don't dump all content into analysis
-- **Token-efficient output**: Limit findings table to 50 rows; summarize overflow
-- **Deterministic results**: Rerunning without changes should produce consistent IDs and counts
+- **최소 고신호 토큰**: 포괄적 문서화가 아닌 실행 가능한 발견에 집중
+- **점진적 공개**: 아티팩트를 점진적으로 로드; 모든 내용을 분석에 덤프하지 않음
+- **토큰 효율 출력**: 발견 테이블을 50행으로 제한; 오버플로 요약
+- **결정론적 결과**: 변경 없이 재실행하면 일관된 ID와 개수 생성
 
-### Analysis Guidelines
+### 분석 가이드라인
 
-- **NEVER modify files** (this is read-only analysis)
-- **NEVER hallucinate missing sections** (if absent, report them accurately)
-- **Prioritize constitution violations** (these are always CRITICAL)
-- **Use examples over exhaustive rules** (cite specific instances, not generic patterns)
-- **Report zero issues gracefully** (emit success report with coverage statistics)
+- **파일 절대 수정 금지** (읽기 전용 분석)
+- **누락 섹션 절대 환각 금지** (없으면 정확하게 보고)
+- **헌법 위반 우선시** (항상 CRITICAL)
+- **규칙 나열보다 예시 사용** (구체적 사례 인용, 일반 패턴 아님)
+- **이슈 없음도 우아하게 보고** (커버리지 통계가 포함된 성공 리포트 출력)
 
-## Context
+## 컨텍스트
 
 $ARGUMENTS

@@ -77,15 +77,15 @@ options:  // 예시: 기술 선택
 모든 변경사항은 `docs/changelog/YYYY-MM-DD-{type}-{short-id}.md`로 기록.
 상세: `docs/rules/04-change-log.md`
 
-### 8. 출력 스타일 (Caveman — Always-on)
+### 8. 출력 스타일 (Caveman — Always-on, Hook 강제)
 
-응답 토큰 절감을 위해 **caveman** 모드 항시 적용. 상세 규칙은 **`.claude/skills/caveman/SKILL.md`** 참조 (Persistence / Rules / Intensity / Auto-Clarity / Boundaries).
+응답 토큰 절감을 위해 **caveman lite** 모드 항시 적용. `.claude/settings.json`의 UserPromptSubmit hook이 매 턴 리마인더를 context에 주입합니다. 상세 규칙은 **`.claude/skills/caveman/SKILL.md`** 참조 (Persistence / Rules / Intensity / Auto-Clarity / Boundaries).
 
 **기본 intensity**: `lite` (한국어 가독성 우선). `full`/`ultra`는 사용자가 `/caveman full|ultra` 로 명시 전환 시에만.
 
 **한국어/프로젝트 보강** (SKILL.md 위에 덮어쓰기):
-- **한국어 가독성 손상 위험 시 자동 일반 스타일** — 조사/어미가 의미를 결정하는 한국어 특성상 과도한 압축 금지
-- **자동 해제 추가 조건**: `question` 툴 옵션·설명 / 변경 diff·요약 제시 / 사용자가 학습·이해 위해 질문할 때
+- **한국어 가독성 손상 위험 시 자동 일반 스타일** — 조사/어미가 의미를 결정하는 복잡 문장은 과도한 압축 금지
+- **자동 해제 조건**: `question` 툴 옵션·설명 / 변경 diff·요약 제시
 - **적용 제외**: 코드 / 커밋 메시지 / 문서(CLAUDE.md, docs/, changelog) — 정상 작성
 
 ---

@@ -1,87 +1,86 @@
 ---
 name: speckit-constitution
-description: Create or update the project constitution from interactive or provided
-  principle inputs, ensuring all dependent templates stay in sync.
-compatibility: Requires spec-kit project structure with .specify/ directory
+description: 인터랙티브 또는 제공된 원칙 입력으로 프로젝트 헌법을 생성하거나 업데이트하고 모든 종속 템플릿을 동기화 상태로 유지합니다.
+compatibility: .specify/ 디렉토리가 있는 spec-kit 프로젝트 구조 필요
 metadata:
   author: github-spec-kit
   source: templates/commands/constitution.md
 disable-model-invocation: true
 ---
 
-## User Input
+## 사용자 입력
 
 ```text
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+진행 전 반드시 사용자 입력을 고려하세요 (비어있지 않은 경우).
 
-## Outline
+## 개요
 
-You are updating the project constitution at `.specify/memory/constitution.md`. This file is a TEMPLATE containing placeholder tokens in square brackets (e.g. `[PROJECT_NAME]`, `[PRINCIPLE_1_NAME]`). Your job is to (a) collect/derive concrete values, (b) fill the template precisely, and (c) propagate any amendments across dependent artifacts.
+`.specify/memory/constitution.md`의 프로젝트 헌법을 업데이트합니다. 이 파일은 대괄호 안에 플레이스홀더 토큰이 포함된 **템플릿**입니다 (예: `[PROJECT_NAME]`, `[PRINCIPLE_1_NAME]`). 작업은 (a) 구체적인 값을 수집/도출하고, (b) 템플릿을 정확하게 채우고, (c) 수정 사항을 종속 아티팩트에 전파하는 것입니다.
 
-**Note**: If `.specify/memory/constitution.md` does not exist yet, it should have been initialized from `.specify/templates/constitution-template.md` during project setup. If it's missing, copy the template first.
+**참고**: `.specify/memory/constitution.md`가 아직 없는 경우, 프로젝트 설정 중에 `.specify/templates/constitution-template.md`에서 초기화되어 있어야 합니다. 없는 경우 먼저 템플릿을 복사하세요.
 
-Follow this execution flow:
+다음 실행 흐름을 따르세요:
 
-1. Load the existing constitution at `.specify/memory/constitution.md`.
-   - Identify every placeholder token of the form `[ALL_CAPS_IDENTIFIER]`.
-   **IMPORTANT**: The user might require less or more principles than the ones used in the template. If a number is specified, respect that - follow the general template. You will update the doc accordingly.
+1. `.specify/memory/constitution.md`의 기존 헌법을 로드합니다.
+   - `[ALL_CAPS_IDENTIFIER]` 형식의 모든 플레이스홀더 토큰 식별.
+   **중요**: 사용자는 템플릿에 사용된 것보다 적거나 많은 원칙을 요구할 수 있습니다. 숫자가 지정된 경우 그것을 존중하고 일반 템플릿을 따르세요. 문서를 그에 맞게 업데이트합니다.
 
-2. Collect/derive values for placeholders:
-   - If user input (conversation) supplies a value, use it.
-   - Otherwise infer from existing repo context (README, docs, prior constitution versions if embedded).
-   - For governance dates: `RATIFICATION_DATE` is the original adoption date (if unknown ask or mark TODO), `LAST_AMENDED_DATE` is today if changes are made, otherwise keep previous.
-   - `CONSTITUTION_VERSION` must increment according to semantic versioning rules:
-     - MAJOR: Backward incompatible governance/principle removals or redefinitions.
-     - MINOR: New principle/section added or materially expanded guidance.
-     - PATCH: Clarifications, wording, typo fixes, non-semantic refinements.
-   - If version bump type ambiguous, propose reasoning before finalizing.
+2. 플레이스홀더 값 수집/도출:
+   - 사용자 입력(대화)이 값을 제공하면 사용.
+   - 그렇지 않으면 기존 저장소 컨텍스트(README, docs, 이전 헌법 버전이 포함된 경우)에서 추론.
+   - 거버넌스 날짜의 경우: `RATIFICATION_DATE`는 원래 채택 날짜 (모르면 묻거나 TODO로 표시), `LAST_AMENDED_DATE`는 변경 시 오늘 날짜, 그렇지 않으면 이전 값 유지.
+   - `CONSTITUTION_VERSION`은 시맨틱 버전 관리 규칙에 따라 증가해야 합니다:
+     - MAJOR: 하위 호환성 없는 거버넌스/원칙 제거 또는 재정의.
+     - MINOR: 새 원칙/섹션 추가 또는 실질적으로 확장된 가이드.
+     - PATCH: 명확화, 표현, 오타 수정, 비의미적 개선.
+   - 버전 범프 유형이 모호한 경우 확정 전에 근거 제안.
 
-3. Draft the updated constitution content:
-   - Replace every placeholder with concrete text (no bracketed tokens left except intentionally retained template slots that the project has chosen not to define yet—explicitly justify any left).
-   - Preserve heading hierarchy and comments can be removed once replaced unless they still add clarifying guidance.
-   - Ensure each Principle section: succinct name line, paragraph (or bullet list) capturing non‑negotiable rules, explicit rationale if not obvious.
-   - Ensure Governance section lists amendment procedure, versioning policy, and compliance review expectations.
+3. 업데이트된 헌법 내용 초안 작성:
+   - 모든 플레이스홀더를 구체적인 텍스트로 교체 (프로젝트가 아직 정의하지 않기로 선택한 의도적으로 유지된 템플릿 슬롯 제외 — 명시적으로 정당화).
+   - 헤딩 계층 구조와 주석은 교체 후 제거 가능하지만 여전히 명확화 가이드를 제공하는 경우 유지.
+   - 각 원칙 섹션 보장: 간결한 이름 줄, 협상 불가 규칙을 담은 단락(또는 불릿 목록), 명확하지 않은 경우 명시적 근거.
+   - 거버넌스 섹션에 수정 절차, 버전 관리 정책, 규정 준수 검토 기대사항 나열.
 
-4. Consistency propagation checklist (convert prior checklist into active validations):
-   - Read `.specify/templates/plan-template.md` and ensure any "Constitution Check" or rules align with updated principles.
-   - Read `.specify/templates/spec-template.md` for scope/requirements alignment—update if constitution adds/removes mandatory sections or constraints.
-   - Read `.specify/templates/tasks-template.md` and ensure task categorization reflects new or removed principle-driven task types (e.g., observability, versioning, testing discipline).
-   - Read each command file in `.specify/templates/commands/*.md` (including this one) to verify no outdated references (agent-specific names like CLAUDE only) remain when generic guidance is required.
-   - Read any runtime guidance docs (e.g., `README.md`, `docs/quickstart.md`, or agent-specific guidance files if present). Update references to principles changed.
+4. 일관성 전파 체크리스트 (이전 체크리스트를 능동적 검증으로 변환):
+   - `.specify/templates/plan-template.md`를 읽고 "헌법 확인" 또는 규칙이 업데이트된 원칙과 정렬되어 있는지 확인.
+   - `.specify/templates/spec-template.md`의 범위/요구사항 정렬 확인 — 헌법이 필수 섹션이나 제약을 추가/제거하는 경우 업데이트.
+   - `.specify/templates/tasks-template.md`를 읽고 태스크 분류가 새로운 또는 제거된 원칙 주도 태스크 유형을 반영하는지 확인 (관찰 가능성, 버전 관리, 테스트 규율 등).
+   - `.specify/templates/commands/*.md`의 각 명령 파일을 읽고 (이 파일 포함) 일반적인 가이드가 필요한 경우 오래된 에이전트별 이름(CLAUDE만 등)이 남아 있지 않은지 확인.
+   - 런타임 가이드 문서(예: `README.md`, `docs/quickstart.md`, 또는 있는 경우 에이전트별 가이드 파일) 읽기. 변경된 원칙에 대한 참조 업데이트.
 
-5. Produce a Sync Impact Report (prepend as an HTML comment at top of the constitution file after update):
-   - Version change: old → new
-   - List of modified principles (old title → new title if renamed)
-   - Added sections
-   - Removed sections
-   - Templates requiring updates (✅ updated / ⚠ pending) with file paths
-   - Follow-up TODOs if any placeholders intentionally deferred.
+5. 동기화 영향 보고서 생성 (업데이트 후 헌법 파일 상단에 HTML 주석으로 첨부):
+   - 버전 변경: 이전 → 새로
+   - 수정된 원칙 목록 (이름 변경 시 이전 제목 → 새 제목)
+   - 추가된 섹션
+   - 제거된 섹션
+   - 업데이트가 필요한 템플릿 (✅ 업데이트됨 / ⚠ 대기 중) 파일 경로 포함
+   - 의도적으로 연기된 플레이스홀더가 있는 경우 후속 TODO.
 
-6. Validation before final output:
-   - No remaining unexplained bracket tokens.
-   - Version line matches report.
-   - Dates ISO format YYYY-MM-DD.
-   - Principles are declarative, testable, and free of vague language ("should" → replace with MUST/SHOULD rationale where appropriate).
+6. 최종 출력 전 검증:
+   - 설명되지 않은 괄호 토큰 없음.
+   - 버전 줄이 보고서와 일치.
+   - 날짜 ISO 형식 YYYY-MM-DD.
+   - 원칙이 선언적이고 테스트 가능하며 모호한 언어 없음 ("should" → 적절한 경우 MUST/SHOULD 근거로 교체).
 
-7. Write the completed constitution back to `.specify/memory/constitution.md` (overwrite).
+7. 완성된 헌법을 `.specify/memory/constitution.md`에 씁니다 (덮어쓰기).
 
-8. Output a final summary to the user with:
-   - New version and bump rationale.
-   - Any files flagged for manual follow-up.
-   - Suggested commit message (e.g., `docs: amend constitution to vX.Y.Z (principle additions + governance update)`).
+8. 사용자에게 최종 요약 출력:
+   - 새 버전 및 범프 근거.
+   - 수동 후속 조치가 필요한 파일.
+   - 제안된 커밋 메시지 (예: `docs: amend constitution to vX.Y.Z (principle additions + governance update)`).
 
-Formatting & Style Requirements:
+형식 및 스타일 요구사항:
 
-- Use Markdown headings exactly as in the template (do not demote/promote levels).
-- Wrap long rationale lines to keep readability (<100 chars ideally) but do not hard enforce with awkward breaks.
-- Keep a single blank line between sections.
-- Avoid trailing whitespace.
+- 템플릿과 정확히 동일한 Markdown 헤딩 사용 (레벨 올리거나 내리지 않음).
+- 가독성을 위해 긴 근거 줄 줄바꿈 (<100자 이상적) 하지만 어색한 중단으로 강제 적용 안 함.
+- 섹션 사이에 빈 줄 하나.
+- 후행 공백 피하기.
 
-If the user supplies partial updates (e.g., only one principle revision), still perform validation and version decision steps.
+사용자가 부분 업데이트를 제공하는 경우 (예: 하나의 원칙 수정만), 여전히 검증 및 버전 결정 단계를 수행하세요.
 
-If critical info missing (e.g., ratification date truly unknown), insert `TODO(<FIELD_NAME>): explanation` and include in the Sync Impact Report under deferred items.
+중요한 정보가 없는 경우 (예: 비준 날짜를 정말 모르는 경우), `TODO(<FIELD_NAME>): 설명`을 삽입하고 동기화 영향 보고서의 연기된 항목 아래에 포함하세요.
 
-Do not create a new template; always operate on the existing `.specify/memory/constitution.md` file.
+새 템플릿을 생성하지 마세요; 항상 기존 `.specify/memory/constitution.md` 파일에서 작업하세요.
