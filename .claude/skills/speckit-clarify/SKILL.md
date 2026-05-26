@@ -1,185 +1,183 @@
 ---
 name: speckit-clarify
-description: Identify underspecified areas in the current feature spec by asking up
-  to 5 highly targeted clarification questions and encoding answers back into the
-  spec.
-compatibility: Requires spec-kit project structure with .specify/ directory
+description: 활성 기능 스펙에서 미명세 영역을 식별하고 최대 5개의 고도로 타겟된 명확화 질문을 통해 답변을 스펙에 인코딩합니다.
+compatibility: .specify/ 디렉토리가 있는 spec-kit 프로젝트 구조 필요
 metadata:
   author: github-spec-kit
   source: templates/commands/clarify.md
 disable-model-invocation: true
 ---
 
-## User Input
+## 사용자 입력
 
 ```text
 $ARGUMENTS
 ```
 
-You **MUST** consider the user input before proceeding (if not empty).
+진행 전 반드시 사용자 입력을 고려하세요 (비어있지 않은 경우).
 
-## Outline
+## 개요
 
-Goal: Detect and reduce ambiguity or missing decision points in the active feature specification and record the clarifications directly in the spec file.
+목표: 활성 기능 명세서에서 모호성 또는 누락된 의사결정 포인트를 탐지하고 줄이며, 명확화 내용을 스펙 파일에 직접 기록합니다.
 
-Note: This clarification workflow is expected to run (and be completed) BEFORE invoking `/speckit.plan`. If the user explicitly states they are skipping clarification (e.g., exploratory spike), you may proceed, but must warn that downstream rework risk increases.
+참고: 이 명확화 워크플로우는 `/speckit-plan` 호출 **전**에 실행(완료)되어야 합니다. 사용자가 명확화를 건너뛰겠다고 명시적으로 말하는 경우(예: 탐색적 스파이크), 진행할 수 있지만 다운스트림 재작업 위험이 증가한다고 경고해야 합니다.
 
-Execution steps:
+실행 단계:
 
-1. Run `.specify/scripts/powershell/check-prerequisites.ps1 -Json -PathsOnly` from repo root **once** (combined `--json --paths-only` mode / `-Json -PathsOnly`). Parse minimal JSON payload fields:
+1. 저장소 루트에서 `.specify/scripts/powershell/check-prerequisites.ps1 -Json -PathsOnly`를 **한 번** 실행합니다 (결합된 `--json --paths-only` 모드 / `-Json -PathsOnly`). 최소 JSON 페이로드 필드 파싱:
    - `FEATURE_DIR`
    - `FEATURE_SPEC`
-   - (Optionally capture `IMPL_PLAN`, `TASKS` for future chained flows.)
-   - If JSON parsing fails, abort and instruct user to re-run `/speckit.specify` or verify feature branch environment.
-   - For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
+   - (선택적으로 미래 체인된 흐름을 위해 `IMPL_PLAN`, `TASKS` 캡처)
+   - JSON 파싱 실패 시 중단하고 사용자에게 `/speckit-specify` 재실행 또는 기능 브랜치 환경 확인 안내.
+   - args에 'I'm Groot'처럼 작은따옴표가 있는 경우 이스케이프 문법 사용: 예) 'I'\''m Groot' (또는 가능하면 큰따옴표: "I'm Groot").
 
-2. Load the current spec file. Perform a structured ambiguity & coverage scan using this taxonomy. For each category, mark status: Clear / Partial / Missing. Produce an internal coverage map used for prioritization (do not output raw map unless no questions will be asked).
+2. 현재 스펙 파일을 로드합니다. 다음 분류법을 사용하여 구조화된 모호성 및 커버리지 스캔을 수행합니다. 각 카테고리에 상태 표시: 명확 / 부분 / 누락. 우선순위화에 사용되는 내부 커버리지 맵 생성 (질문이 없을 때를 제외하고 원시 맵 출력 안함).
 
-   Functional Scope & Behavior:
-   - Core user goals & success criteria
-   - Explicit out-of-scope declarations
-   - User roles / personas differentiation
+   기능 범위 및 동작:
+   - 핵심 사용자 목표 및 성공 기준
+   - 명시적 범위 밖 선언
+   - 사용자 역할/페르소나 차별화
 
-   Domain & Data Model:
-   - Entities, attributes, relationships
-   - Identity & uniqueness rules
-   - Lifecycle/state transitions
-   - Data volume / scale assumptions
+   도메인 및 데이터 모델:
+   - 엔티티, 속성, 관계
+   - 식별 및 고유성 규칙
+   - 라이프사이클/상태 전환
+   - 데이터 볼륨/규모 가정
 
-   Interaction & UX Flow:
-   - Critical user journeys / sequences
-   - Error/empty/loading states
-   - Accessibility or localization notes
+   인터랙션 및 UX 흐름:
+   - 중요한 사용자 여정/시퀀스
+   - 오류/비어있음/로딩 상태
+   - 접근성 또는 현지화 참고
 
-   Non-Functional Quality Attributes:
-   - Performance (latency, throughput targets)
-   - Scalability (horizontal/vertical, limits)
-   - Reliability & availability (uptime, recovery expectations)
-   - Observability (logging, metrics, tracing signals)
-   - Security & privacy (authN/Z, data protection, threat assumptions)
-   - Compliance / regulatory constraints (if any)
+   비기능 품질 속성:
+   - 성능 (지연 시간, 처리량 목표)
+   - 확장성 (수평/수직, 한계)
+   - 신뢰성 및 가용성 (가동 시간, 복구 기대)
+   - 관찰 가능성 (로깅, 지표, 추적 신호)
+   - 보안 및 개인정보 (인증/인가, 데이터 보호, 위협 가정)
+   - 규정 준수/규제 제약 (있는 경우)
 
-   Integration & External Dependencies:
-   - External services/APIs and failure modes
-   - Data import/export formats
-   - Protocol/versioning assumptions
+   통합 및 외부 의존성:
+   - 외부 서비스/API 및 실패 모드
+   - 데이터 가져오기/내보내기 형식
+   - 프로토콜/버전 관리 가정
 
-   Edge Cases & Failure Handling:
-   - Negative scenarios
-   - Rate limiting / throttling
-   - Conflict resolution (e.g., concurrent edits)
+   엣지 케이스 및 실패 처리:
+   - 부정적 시나리오
+   - 속도 제한/조절
+   - 충돌 해결 (예: 동시 편집)
 
-   Constraints & Tradeoffs:
-   - Technical constraints (language, storage, hosting)
-   - Explicit tradeoffs or rejected alternatives
+   제약 및 트레이드오프:
+   - 기술 제약 (언어, 저장소, 호스팅)
+   - 명시적 트레이드오프 또는 거부된 대안
 
-   Terminology & Consistency:
-   - Canonical glossary terms
-   - Avoided synonyms / deprecated terms
+   용어 및 일관성:
+   - 표준 용어집 용어
+   - 피해야 할 동의어/폐기된 용어
 
-   Completion Signals:
-   - Acceptance criteria testability
-   - Measurable Definition of Done style indicators
+   완료 신호:
+   - 수락 기준 테스트 가능성
+   - 측정 가능한 완료 정의 스타일 지표
 
-   Misc / Placeholders:
-   - TODO markers / unresolved decisions
-   - Ambiguous adjectives ("robust", "intuitive") lacking quantification
+   기타/플레이스홀더:
+   - TODO 마커/미해결 결정
+   - 정량화가 없는 모호한 형용사 ("robust", "intuitive")
 
-   For each category with Partial or Missing status, add a candidate question opportunity unless:
-   - Clarification would not materially change implementation or validation strategy
-   - Information is better deferred to planning phase (note internally)
+   다음을 제외하고 부분 또는 누락 상태인 각 카테고리에 후보 질문 기회 추가:
+   - 명확화가 구현 또는 검증 전략을 실질적으로 변경하지 않는 경우
+   - 정보가 계획 단계로 연기하는 것이 더 좋은 경우 (내부적으로 기록)
 
-3. Generate (internally) a prioritized queue of candidate clarification questions (maximum 5). Do NOT output them all at once. Apply these constraints:
-    - Maximum of 5 total questions across the whole session.
-    - Each question must be answerable with EITHER:
-       - A short multiple‑choice selection (2–5 distinct, mutually exclusive options), OR
-       - A one-word / short‑phrase answer (explicitly constrain: "Answer in <=5 words").
-    - Only include questions whose answers materially impact architecture, data modeling, task decomposition, test design, UX behavior, operational readiness, or compliance validation.
-    - Ensure category coverage balance: attempt to cover the highest impact unresolved categories first; avoid asking two low-impact questions when a single high-impact area (e.g., security posture) is unresolved.
-    - Exclude questions already answered, trivial stylistic preferences, or plan-level execution details (unless blocking correctness).
-    - Favor clarifications that reduce downstream rework risk or prevent misaligned acceptance tests.
-    - If more than 5 categories remain unresolved, select the top 5 by (Impact * Uncertainty) heuristic.
+3. 후보 명확화 질문의 우선순위화된 큐를 내부적으로 생성합니다 (최대 5개). 모두 한꺼번에 출력하지 않습니다. 다음 제약 적용:
+    - 세션 전체에서 총 최대 5개 질문.
+    - 각 질문은 다음 중 하나로 답변 가능해야 합니다:
+       - 짧은 객관식 선택 (2–5개의 구별되고 상호 배타적인 옵션), 또는
+       - 한 단어/짧은 구문 답변 (명시적 제약: "5단어 이하로 답변").
+    - 아키텍처, 데이터 모델링, 태스크 분해, 테스트 설계, UX 동작, 운영 준비성, 규정 준수 검증에 실질적으로 영향을 미치는 질문만 포함.
+    - 카테고리 커버리지 균형 보장: 가장 높은 영향의 미해결 카테고리를 먼저 다루려고 시도; 단일 높은 영향 영역(예: 보안 자세)이 미해결인 경우 두 개의 낮은 영향 질문을 하지 않음.
+    - 이미 답변된 질문, 사소한 스타일 선호도, 계획 수준 실행 세부사항 제외 (정확성을 차단하지 않는 한).
+    - 다운스트림 재작업 위험을 줄이거나 잘못된 수락 테스트를 방지하는 명확화 선호.
+    - 5개 이상의 카테고리가 미해결인 경우 (영향 * 불확실성) 휴리스틱으로 상위 5개 선택.
 
-4. Sequential questioning loop (interactive):
-    - Present EXACTLY ONE question at a time.
-    - For multiple‑choice questions:
-       - **Analyze all options** and determine the **most suitable option** based on:
-          - Best practices for the project type
-          - Common patterns in similar implementations
-          - Risk reduction (security, performance, maintainability)
-          - Alignment with any explicit project goals or constraints visible in the spec
-       - Present your **recommended option prominently** at the top with clear reasoning (1-2 sentences explaining why this is the best choice).
-       - Format as: `**Recommended:** Option [X] - <reasoning>`
-       - Then render all options as a Markdown table:
+4. 순차적 질문 루프 (인터랙티브):
+    - 정확히 한 번에 하나의 질문 제시.
+    - 객관식 질문의 경우:
+       - **모든 옵션 분석**하고 다음을 기준으로 **가장 적합한 옵션 결정**:
+          - 프로젝트 유형에 대한 모범 사례
+          - 유사한 구현의 일반적인 패턴
+          - 위험 감소 (보안, 성능, 유지 관리성)
+          - 스펙에서 보이는 명시적 프로젝트 목표나 제약과의 정렬
+       - 명확한 근거와 함께 **추천 옵션을 상단에 눈에 띄게** 제시 (이것이 최선의 선택인 이유를 1-2문장으로 설명).
+       - 형식: `**추천:** 옵션 [X] - <근거>`
+       - 그런 다음 모든 옵션을 Markdown 테이블로 렌더링:
 
-       | Option | Description |
-       |--------|-------------|
-       | A | <Option A description> |
-       | B | <Option B description> |
-       | C | <Option C description> (add D/E as needed up to 5) |
-       | Short | Provide a different short answer (<=5 words) (Include only if free-form alternative is appropriate) |
+       | 옵션 | 설명 |
+       |------|------|
+       | A | <옵션 A 설명> |
+       | B | <옵션 B 설명> |
+       | C | <옵션 C 설명> (필요에 따라 D/E 추가, 최대 5개) |
+       | 짧은 답변 | 다른 짧은 답변 제공 (5단어 이하) (자유 형식 대안이 적절한 경우에만 포함) |
 
-       - After the table, add: `You can reply with the option letter (e.g., "A"), accept the recommendation by saying "yes" or "recommended", or provide your own short answer.`
-    - For short‑answer style (no meaningful discrete options):
-       - Provide your **suggested answer** based on best practices and context.
-       - Format as: `**Suggested:** <your proposed answer> - <brief reasoning>`
-       - Then output: `Format: Short answer (<=5 words). You can accept the suggestion by saying "yes" or "suggested", or provide your own answer.`
-    - After the user answers:
-       - If the user replies with "yes", "recommended", or "suggested", use your previously stated recommendation/suggestion as the answer.
-       - Otherwise, validate the answer maps to one option or fits the <=5 word constraint.
-       - If ambiguous, ask for a quick disambiguation (count still belongs to same question; do not advance).
-       - Once satisfactory, record it in working memory (do not yet write to disk) and move to the next queued question.
-    - Stop asking further questions when:
-       - All critical ambiguities resolved early (remaining queued items become unnecessary), OR
-       - User signals completion ("done", "good", "no more"), OR
-       - You reach 5 asked questions.
-    - Never reveal future queued questions in advance.
-    - If no valid questions exist at start, immediately report no critical ambiguities.
+       - 테이블 다음에 추가: `옵션 문자로 답변하거나 (예: "A"), "yes" 또는 "recommended"라고 말해 추천을 수락하거나, 자신의 짧은 답변을 제공할 수 있습니다.`
+    - 짧은 답변 스타일의 경우 (의미 있는 이산 옵션 없음):
+       - 모범 사례와 컨텍스트에 기반한 **제안 답변** 제공.
+       - 형식: `**제안:** <제안된 답변> - <간단한 근거>`
+       - 그런 다음 출력: `형식: 짧은 답변 (5단어 이하). "yes" 또는 "suggested"라고 말해 제안을 수락하거나 자신의 답변을 제공할 수 있습니다.`
+    - 사용자 답변 후:
+       - 사용자가 "yes", "recommended" 또는 "suggested"로 답변하면 이전에 명시한 추천/제안을 답변으로 사용.
+       - 그렇지 않으면 답변이 하나의 옵션에 매핑되거나 5단어 이하 제약에 맞는지 검증.
+       - 모호한 경우 빠른 명확화 요청 (카운트는 동일 질문에 속하며 진행하지 않음).
+       - 만족스러우면 작업 메모리에 기록하고 (아직 디스크에 쓰지 않음) 다음 큐에 있는 질문으로 이동.
+    - 다음 경우 추가 질문 중단:
+       - 모든 중요한 모호성이 일찍 해결됨 (나머지 큐에 있는 항목이 불필요해짐), 또는
+       - 사용자가 완료 신호를 보냄 ("done", "good", "no more"), 또는
+       - 5개 질문에 도달.
+    - 미래의 큐에 있는 질문을 미리 공개하지 않음.
+    - 시작 시 유효한 질문이 없으면 중요한 모호성 없음을 즉시 보고.
 
-5. Integration after EACH accepted answer (incremental update approach):
-    - Maintain in-memory representation of the spec (loaded once at start) plus the raw file contents.
-    - For the first integrated answer in this session:
-       - Ensure a `## Clarifications` section exists (create it just after the highest-level contextual/overview section per the spec template if missing).
-       - Under it, create (if not present) a `### Session YYYY-MM-DD` subheading for today.
-    - Append a bullet line immediately after acceptance: `- Q: <question> → A: <final answer>`.
-    - Then immediately apply the clarification to the most appropriate section(s):
-       - Functional ambiguity → Update or add a bullet in Functional Requirements.
-       - User interaction / actor distinction → Update User Stories or Actors subsection (if present) with clarified role, constraint, or scenario.
-       - Data shape / entities → Update Data Model (add fields, types, relationships) preserving ordering; note added constraints succinctly.
-       - Non-functional constraint → Add/modify measurable criteria in Success Criteria > Measurable Outcomes (convert vague adjective to metric or explicit target).
-       - Edge case / negative flow → Add a new bullet under Edge Cases / Error Handling (or create such subsection if template provides placeholder for it).
-       - Terminology conflict → Normalize term across spec; retain original only if necessary by adding `(formerly referred to as "X")` once.
-    - If the clarification invalidates an earlier ambiguous statement, replace that statement instead of duplicating; leave no obsolete contradictory text.
-    - Save the spec file AFTER each integration to minimize risk of context loss (atomic overwrite).
-    - Preserve formatting: do not reorder unrelated sections; keep heading hierarchy intact.
-    - Keep each inserted clarification minimal and testable (avoid narrative drift).
+5. 각 수락된 답변 후 통합 (점진적 업데이트 방식):
+    - 스펙의 인메모리 표현 (시작 시 한 번 로드) 및 원시 파일 내용 유지.
+    - 이 세션에서 첫 번째 통합된 답변의 경우:
+       - `## 명확화` 섹션이 있는지 확인 (없으면 스펙 템플릿에 따른 최고 수준 컨텍스트/개요 섹션 바로 다음에 생성).
+       - 그 아래에 오늘 날짜의 `### 세션 YYYY-MM-DD` 소제목 생성 (없는 경우).
+    - 수락 직후 불릿 줄 추가: `- Q: <질문> → A: <최종 답변>`.
+    - 그런 다음 명확화를 가장 적절한 섹션에 즉시 적용:
+       - 기능적 모호성 → 기능 요구사항에서 불릿 업데이트 또는 추가.
+       - 사용자 인터랙션/역할 구분 → 명확한 역할, 제약 또는 시나리오로 사용자 스토리 또는 행위자 소섹션 업데이트 (있는 경우).
+       - 데이터 형태/엔티티 → 필드, 유형, 관계를 추가하여 데이터 모델 업데이트 (순서 보존; 간결하게 추가된 제약 기록).
+       - 비기능 제약 → 성공 기준 > 측정 가능한 결과에서 측정 가능한 기준 추가/수정 (모호한 형용사를 지표 또는 명시적 목표로 변환).
+       - 엣지 케이스/부정적 흐름 → 엣지 케이스/오류 처리 아래 새 불릿 추가 (또는 템플릿에 플레이스홀더가 있으면 해당 소섹션 생성).
+       - 용어 충돌 → 스펙 전반에 걸쳐 용어 정규화; 필요한 경우에만 원본 유지 (`(이전에는 "X"라고 불림)`를 한 번 추가).
+    - 명확화가 이전의 모호한 진술을 무효화하는 경우 해당 진술을 복제하는 대신 대체; 오래되어 모순되는 텍스트 남기지 않음.
+    - 각 통합 후 스펙 파일 저장 (컨텍스트 손실 위험 최소화를 위한 원자적 덮어쓰기).
+    - 형식 보존: 관련 없는 섹션 재정렬 안 함; 헤딩 계층 구조 유지.
+    - 각 삽입된 명확화를 최소화하고 테스트 가능하게 유지 (서술적 이탈 피하기).
 
-6. Validation (performed after EACH write plus final pass):
-   - Clarifications session contains exactly one bullet per accepted answer (no duplicates).
-   - Total asked (accepted) questions ≤ 5.
-   - Updated sections contain no lingering vague placeholders the new answer was meant to resolve.
-   - No contradictory earlier statement remains (scan for now-invalid alternative choices removed).
-   - Markdown structure valid; only allowed new headings: `## Clarifications`, `### Session YYYY-MM-DD`.
-   - Terminology consistency: same canonical term used across all updated sections.
+6. 검증 (각 쓰기 후 및 최종 패스 수행):
+   - 명확화 세션에 수락된 답변당 정확히 하나의 불릿 포함 (중복 없음).
+   - 총 질문 (수락됨) ≤ 5.
+   - 업데이트된 섹션에 새 답변이 해결하도록 되어 있던 모호한 플레이스홀더가 없음.
+   - 이전의 모순된 진술이 남아 있지 않음 (이제 유효하지 않은 대안 선택을 위해 스캔).
+   - Markdown 구조 유효; 허용된 새 헤딩만: `## 명확화`, `### 세션 YYYY-MM-DD`.
+   - 용어 일관성: 모든 업데이트된 섹션에 동일한 정식 용어 사용.
 
-7. Write the updated spec back to `FEATURE_SPEC`.
+7. 업데이트된 스펙을 `FEATURE_SPEC`에 씁니다.
 
-8. Report completion (after questioning loop ends or early termination):
-   - Number of questions asked & answered.
-   - Path to updated spec.
-   - Sections touched (list names).
-   - Coverage summary table listing each taxonomy category with Status: Resolved (was Partial/Missing and addressed), Deferred (exceeds question quota or better suited for planning), Clear (already sufficient), Outstanding (still Partial/Missing but low impact).
-   - If any Outstanding or Deferred remain, recommend whether to proceed to `/speckit.plan` or run `/speckit.clarify` again later post-plan.
-   - Suggested next command.
+8. 완료 보고 (질문 루프 종료 또는 조기 종료 후):
+   - 질문 수 및 답변 수.
+   - 업데이트된 스펙 경로.
+   - 수정된 섹션 (이름 나열).
+   - 각 분류법 카테고리를 상태와 함께 나열하는 커버리지 요약 테이블: 해결됨 (부분/누락이었고 해결됨), 연기됨 (질문 할당량 초과 또는 계획에 더 적합), 명확 (이미 충분), 미결 (낮은 영향이지만 여전히 부분/누락).
+   - 미결 또는 연기됨이 남아 있는 경우 `/speckit-plan`으로 진행할지 계획 후 나중에 `/speckit-clarify`를 다시 실행할지 권장.
+   - 제안된 다음 명령.
 
-Behavior rules:
+동작 규칙:
 
-- If no meaningful ambiguities found (or all potential questions would be low-impact), respond: "No critical ambiguities detected worth formal clarification." and suggest proceeding.
-- If spec file missing, instruct user to run `/speckit.specify` first (do not create a new spec here).
-- Never exceed 5 total asked questions (clarification retries for a single question do not count as new questions).
-- Avoid speculative tech stack questions unless the absence blocks functional clarity.
-- Respect user early termination signals ("stop", "done", "proceed").
-- If no questions asked due to full coverage, output a compact coverage summary (all categories Clear) then suggest advancing.
-- If quota reached with unresolved high-impact categories remaining, explicitly flag them under Deferred with rationale.
+- 의미 있는 모호성이 없는 경우 (또는 모든 잠재적 질문이 낮은 영향인 경우) 응답: "공식 명확화가 가치 있는 중요한 모호성이 감지되지 않았습니다."라고 말하고 진행 제안.
+- 스펙 파일이 없는 경우 사용자에게 먼저 `/speckit-specify`를 실행하도록 안내 (여기서 새 스펙 생성 안 함).
+- 총 5개의 질문 절대 초과 금지 (단일 질문에 대한 명확화 재시도는 새 질문으로 카운트 안 함).
+- 기능적 명확성을 차단하지 않는 한 추측적 기술 스택 질문 피하기.
+- 사용자의 조기 종료 신호 존중 ("stop", "done", "proceed").
+- 전체 커버리지로 인해 질문이 없는 경우 간결한 커버리지 요약 (모든 카테고리 명확) 출력 후 진행 제안.
+- 할당량에 도달했는데 미해결 높은 영향 카테고리가 남아 있는 경우 근거와 함께 연기됨 아래에 명시적으로 표시.
 
-Context for prioritization: $ARGUMENTS
+우선순위화 컨텍스트: $ARGUMENTS

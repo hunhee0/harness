@@ -28,10 +28,10 @@
 
 | 스킬 | 사용 시점 |
 |---|---|
-| `/speckit.specify` | 새 기능 스펙 작성 시 |
-| `/speckit.plan` | 스펙 기반 구현 계획 시 |
-| `/speckit.tasks` | 태스크 분해 시 |
-| `/speckit.implement` | 태스크 기반 구현 시 |
+| `/speckit-specify` | 새 기능 스펙 작성 시 |
+| `/speckit-plan` | 스펙 기반 구현 계획 시 |
+| `/speckit-tasks` | 태스크 분해 시 |
+| `/speckit-implement` | 태스크 기반 구현 시 |
 
 ### gstack
 

@@ -39,7 +39,7 @@ LLM 기반 코딩 에이전트는 **모델 능력만큼이나 "하네스(harness
 2. **`docs/rules/01-project-structure.md`를 실제 프로젝트 구조에 맞게 재작성**
    - 현재 상태는 🟡 *잠정(Tentative)* — FastAPI 예시일 뿐
    - 도메인·언어·프레임워크 확정 후 갱신
-3. `CLAUDE.md` 의 절대 규칙 확인 → `/speckit.specify` 로 첫 기능 명세 시작
+3. `CLAUDE.md` 의 절대 규칙 확인 → `/speckit-specify` 로 첫 기능 명세 시작
 4. SDD 4단계(`specify → plan → tasks → implement`) 엄격 준수
 
 ### B. 기존 운영 코드 (ITO) 에 적용 시
@@ -109,7 +109,7 @@ https://github.com/rtk-ai/rtk
 ### Speckit 4단계 (SDD)
 
 ```
-/speckit.specify  →  /speckit.plan  →  /speckit.tasks  →  /speckit.implement
+/speckit-specify  →  /speckit-plan  →  /speckit-tasks  →  /speckit-implement
    (spec.md)         (plan.md)         (tasks.md)        (src/, tests/)
 ```
 

@@ -13,10 +13,10 @@
 
 | 단계 | 명령 | 생성 파일 | 설명 |
 |---|---|---|---|
-| 1 | `/speckit.specify` | `docs/spec/{feature}/spec.md` | 기능 명세 작성 |
-| 2 | `/speckit.plan` | `docs/spec/{feature}/plan.md` | 구현 계획 수립 |
-| 3 | `/speckit.tasks` | `docs/spec/{feature}/tasks.md` | 작업 분해 |
-| 4 | `/speckit.implement` | `src/` | 실제 구현 |
+| 1 | `/speckit-specify` | `docs/spec/{feature}/spec.md` | 기능 명세 작성 |
+| 2 | `/speckit-plan` | `docs/spec/{feature}/plan.md` | 구현 계획 수립 |
+| 3 | `/speckit-tasks` | `docs/spec/{feature}/tasks.md` | 작업 분해 |
+| 4 | `/speckit-implement` | `src/` | 실제 구현 |
 
 > ⚡ **단계 이동 전 반드시 사용자 확인 필요** — 각 단계 완료 후 다음 단계로 넘어가기 전 사용자에게 확인
 
@@ -54,7 +54,7 @@
 
 ### tasks.md 체크박스 추적 규칙
 
-**`/speckit.tasks` 로 생성된 `docs/spec/{feature}/tasks.md` 파일에는 `[ ]` 체크박스가 포함됩니다.**  
+**`/speckit-tasks` 로 생성된 `docs/spec/{feature}/tasks.md` 파일에는 `[ ]` 체크박스가 포함됩니다.**  
 각 태스크 구현 완료 시 체크박스를 `[x]` 로 업데이트하세요.
 
 **규칙**:

@@ -3,7 +3,7 @@
 **브랜치**: `[###-기능-이름]` | **작성일**: [날짜] | **명세**: [링크]
 **입력**: `docs/spec/[###-기능-이름]/spec.md` 에서 가져온 기능 명세
 
-**참고**: 이 템플릿은 `/speckit.plan` 명령에 의해 채워집니다.
+**참고**: 이 템플릿은 `/speckit-plan` 명령에 의해 채워집니다.
 
 ## 요약
 
@@ -33,13 +33,13 @@
 
 ```text
 docs/spec/[###-기능]/
-├── spec.md              # 기능 명세 (/speckit.specify 명령 출력)
-├── plan.md              # 이 파일 (/speckit.plan 명령 출력)
-├── research.md          # Phase 0 출력 (/speckit.plan 명령)
-├── data-model.md        # Phase 1 출력 (/speckit.plan 명령)
-├── quickstart.md        # Phase 1 출력 (/speckit.plan 명령)
-├── contracts/           # Phase 1 출력 (/speckit.plan 명령)
-└── tasks.md             # Phase 2 출력 (/speckit.tasks 명령)
+├── spec.md              # 기능 명세 (/speckit-specify 명령 출력)
+├── plan.md              # 이 파일 (/speckit-plan 명령 출력)
+├── research.md          # Phase 0 출력 (/speckit-plan 명령)
+├── data-model.md        # Phase 1 출력 (/speckit-plan 명령)
+├── quickstart.md        # Phase 1 출력 (/speckit-plan 명령)
+├── contracts/           # Phase 1 출력 (/speckit-plan 명령)
+└── tasks.md             # Phase 2 출력 (/speckit-tasks 명령)
 ```
 
 ### 소스 코드 (저장소 루트)
