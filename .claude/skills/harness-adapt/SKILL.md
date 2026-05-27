@@ -54,7 +54,7 @@ description: 기존 프로젝트에 이 하네스를 자동 분석·적응시키
 ### 1-2. 디렉토리 구조 파악
 
 - **소스**: `src/`, `lib/`, `app/`, `cmd/`, `internal/`, `pkg/`
-- **테스트**: `tests/`, `test/`, `__tests__/`, `spec/`
+- **테스트**: `tests/`, `test/`, `__tests__/`, `specs/`
 - **설정**: `config/`, `conf/`, `.env*`
 - **빌드 결과**: `dist/`, `build/`, `target/`, `bin/`, `out/`
 
