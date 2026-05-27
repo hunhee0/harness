@@ -19,9 +19,9 @@ description: 새 기능의 스펙·계획·태스크 단계 전담 에이전트.
 **입력**: 기능 설명 (자연어), 프로젝트 컨텍스트 (`docs/rules/`, `.specify/memory/constitution.md`)
 
 **출력**:
-- `docs/spec/{feature}/spec.md`
-- `docs/spec/{feature}/plan.md`
-- `docs/spec/{feature}/tasks.md`
+- `docs/specs/{feature}/spec.md`
+- `docs/specs/{feature}/plan.md`
+- `docs/specs/{feature}/tasks.md`
 
 ## 실행 프로토콜
 
@@ -34,7 +34,7 @@ description: 새 기능의 스펙·계획·태스크 단계 전담 에이전트.
 ## 팀 통신 프로토콜
 
 - **수신**: 오케스트레이터로부터 기능 설명 + 컨텍스트
-- **발신**: `implementer`에게 `docs/spec/{feature}/tasks.md` 경로 전달
+- **발신**: `implementer`에게 `docs/specs/{feature}/tasks.md` 경로 전달
 - **블로킹 조건**: 사용자 미확인 시 다음 단계 진행 불가
 
 ## 재호출 시 행동
