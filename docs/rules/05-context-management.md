@@ -18,7 +18,7 @@ LLM은 컨텍스트가 가득 찰수록 성능이 저하됩니다.
 
 - **루트 `CLAUDE.md`는 짧게** — 인덱스/요약만, 80-120줄 이내 유지
 - **상세는 `docs/rules/`** — 필요할 때만 로드
-- **작업별 스펙은 `docs/spec/{feature}/`** — 해당 작업 진행 시에만 참조
+- **작업별 스펙은 `docs/specs/{feature}/`** — 해당 작업 진행 시에만 참조
 
 ### 2. Context Compaction (컨텍스트 압축)
 
@@ -32,7 +32,7 @@ LLM은 컨텍스트가 가득 찰수록 성능이 저하됩니다.
 |---|---|---|---|
 | **Tier 1 (Always-on)** | `CLAUDE.md` | 거의 안 바뀜 | 절대 규칙 인덱스 |
 | **Tier 2 (Domain Rules)** | `docs/rules/*.md` | 가끔 | 도메인별 상세 규칙 |
-| **Tier 3 (Task Context)** | `docs/spec/{feature}/` | 작업마다 | 기능별 spec/plan/tasks |
+| **Tier 3 (Task Context)** | `docs/specs/{feature}/` | 작업마다 | 기능별 specs/plan/tasks |
 | **Tier 4 (History)** | `docs/changelog/` | 변경 시 | 변경 이력 |
 
 ### 4. Instruction Overload 방지
