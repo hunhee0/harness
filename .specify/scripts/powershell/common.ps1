@@ -68,7 +68,7 @@ function Get-CurrentBranch {
     }
 
     # For non-git repos, try to find the latest feature directory
-    $specsDir = Join-Path $repoRoot "docs/spec"
+    $specsDir = Join-Path $repoRoot "docs/specs"
     
     if (Test-Path $specsDir) {
         $latestFeature = ""
