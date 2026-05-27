@@ -16,7 +16,7 @@ description: tasks.md 기반 코드 구현 에이전트. TDD 준수, Verificatio
 
 ## 입력/출력
 
-**입력**: `docs/spec/{feature}/tasks.md`, `docs/spec/{feature}/spec.md`
+**입력**: `docs/specs/{feature}/tasks.md`, `docs/specs/{feature}/spec.md`
 
 **출력**: `src/` 코드, `tests/` 테스트, 업데이트된 `tasks.md` (체크박스)
 
