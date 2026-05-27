@@ -13,7 +13,7 @@ haness/
 ├── CLAUDE.md                  # 하네스 루트 진입점
 ├── docs/
 │   ├── rules/                 # 절대 규칙 (5개 파일)
-│   ├── spec/                  # Speckit 스펙 (기능별 디렉토리, 미생성)
+│   ├── specs/                  # Speckit 스펙 (기능별 디렉토리, 미생성)
 │   └── changelog/             # 변경 이력 로그
 └── (src/, tests/ 는 프로젝트 시작 시 생성)
 ```
