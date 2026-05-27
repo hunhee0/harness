@@ -193,7 +193,7 @@ https://github.com/rtk-ai/rtk
 
 ```
 planner  →  implementer  →  reviewer  →  qa
-(spec/plan/    (TDD 구현)     (스펙 준수 +     (통합 정합성 +
+(specs/plan/    (TDD 구현)     (스펙 준수 +     (통합 정합성 +
  tasks 생성)                  코드 품질)       엣지 케이스)
 ```
 
@@ -228,7 +228,7 @@ planner  →  implementer  →  reviewer  →  qa
 
 - **Progressive Disclosure** — 루트 `CLAUDE.md` 짧게, 상세는 `docs/rules/` 로 위임
 - **Net-zero** — 새 규칙 추가 시 기존 1개 압축 (Instruction overload 방지, ~150-200개 한계)
-- **Memory Tiering** — Tier 1(CLAUDE.md) → Tier 2(docs/rules) → Tier 3(docs/spec) → Tier 4(changelog)
+- **Memory Tiering** — Tier 1(CLAUDE.md) → Tier 2(docs/rules) → Tier 3(docs/specs) → Tier 4(changelog)
 - **Permission Gating** — 위험 작업(rm -rf, force push, DB drop)은 사용자 명시 동의 필요
 
 상세: `docs/rules/05-context-management.md`
@@ -258,7 +258,7 @@ haness/
 ├── docs/
 │   ├── INSTALL.md                   # 이식 + opencode 변환 가이드
 │   ├── rules/                       # 절대 규칙 (7개 파일)
-│   ├── spec/                        # Speckit 스펙 (기능별, 실 프로젝트 적용 시 생성)
+│   ├── specs/                        # Speckit 스펙 (기능별, 실 프로젝트 적용 시 생성)
 │   └── changelog/                   # 변경 이력 로그
 ├── setup.ps1                        # 하네스 이식 스크립트 (Windows)
 ├── setup.sh                         # 하네스 이식 스크립트 (Mac / Linux)
