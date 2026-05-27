@@ -47,7 +47,7 @@ docs/{short-name}     # 문서만
 - 구현한 것 요약
 
 ## 스펙 참조
-- docs/spec/{feature}/spec.md
+- docs/specs/{feature}/spec.md
 
 ## 검증
 - [ ] 단위 테스트 통과
