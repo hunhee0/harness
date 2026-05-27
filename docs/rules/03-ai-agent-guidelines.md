@@ -87,7 +87,7 @@
 
 | 에이전트 | 역할 | 입력 | 출력 |
 |---------|------|------|------|
-| `planner` | 스펙·계획·태스크 작성 | 기능 설명 | spec/plan/tasks.md |
+| `planner` | 스펙·계획·태스크 작성 | 기능 설명 | specs/plan/tasks.md |
 | `implementer` | TDD 기반 코드 구현 | tasks.md | src/, tests/ |
 | `reviewer` | 스펙 준수·코드 품질 검증 | 구현 파일 | 이슈 목록 + 판정 |
 | `qa` | 통합 정합성·엣지 케이스 검증 | 구현 모듈 | QA 보고서 |
