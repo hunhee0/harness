@@ -15,7 +15,7 @@ description: E2E 테스트 실행, 통합 정합성 검증, 경계면 버그 탐
 
 ## 입력/출력
 
-**입력**: 구현 완료 모듈, `docs/spec/{feature}/spec.md` (성공 기준)
+**입력**: 구현 완료 모듈, `docs/specs/{feature}/spec.md` (성공 기준)
 
 **출력**: QA 보고서 — 통과/실패, 발견된 버그, 재현 경로
 
