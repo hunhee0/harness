@@ -41,7 +41,7 @@ docs/changelog/YYYY-MM-DD-{type}-{short-id}.md
 - 영향받은 파일/모듈
 
 ## 관련 스펙
-- `docs/spec/{feature}/spec.md` (관련된 경우)
+- `docs/specs/{feature}/spec.md` (관련된 경우)
 ```
 
 ### 기록 시점
