@@ -72,7 +72,7 @@ options:  // 예시: 기술 선택
 | **Context Engineering** | 컨텍스트 압축, Progressive Disclosure (`05-context-management.md`) |
 | **Verification Loop** | 변경 후 테스트/타입체크/실제 실행으로 결과 검증 |
 | **Permission Gating** | 위험 작업(rm -rf, force push, DB drop)은 사용자 명시 동의 필요 |
-| **Memory Tiering** | `CLAUDE.md`(짧게) → `docs/rules/`(상세) → `docs/spec/`(작업별) → `.specify/memory/constitution.md`(프로젝트 원칙) |
+| **Memory Tiering** | `CLAUDE.md`(짧게) → `docs/rules/`(상세) → `docs/specs/`(작업별) → `.specify/memory/constitution.md`(프로젝트 원칙) |
 
 ### 7. 변경 이력 관리
 
@@ -133,7 +133,7 @@ haness/
 │   └── skills/                      # 스킬 (harness-orchestrator 등)
 ├── docs/
 │   ├── rules/                       # 절대 규칙 (7개 파일)
-│   ├── spec/                        # Speckit 스펙 (기능별 디렉토리)
+│   ├── specs/                        # Speckit 스펙 (기능별 디렉토리)
 │   └── changelog/                   # 변경 이력 로그
 ├── .specify/
 │   └── memory/constitution.md       # 프로젝트 원칙 (시작 시 작성)
