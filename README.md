@@ -11,9 +11,9 @@
 
 | 항목 | 값 |
 |---|---|
-| 정체 | Claude Code 하네스(harness) 명세서 |
-| 사용 대상 | ① 새 프로젝트 시작 ② 기존 운영(ITO) 코드 ③ AM(유지보수) 과제 |
-| 핵심 도구 | Claude Code + Speckit + 에이전트 팀 + 오케스트레이터 + rtk-ai |
+| 정체 | 하네스(harness) 명세서 |
+| 사용 대상 | ① 새 프로젝트 시작 ② 기존 운영(ITO) 코드 |
+| 핵심 도구 | Speckit + 에이전트 팀 + 오케스트레이터 |
 | 핵심 스킬 | `harness-orchestrator` (개발 파이프라인) · `harness-adapt` (자동 onboarding) · `caveman` (토큰 절감) |
 | 에이전트 팀 | `planner` → `implementer` → `reviewer` → `qa` |
 | 개발 방식 | SDD + Speckit + TDD + Verification Loop |
@@ -29,7 +29,7 @@ LLM 기반 코딩 에이전트는 **모델 능력만큼이나 "하네스(harness
 이 레포지토리는 그 하네스의 **재사용 가능한 기본형(template)**을 제공하며, 다음을 포함합니다:
 
 - 📋 **규칙·메모리** — `CLAUDE.md` + `docs/rules/` (7개 파일)
-- 🤖 **에이전트 팀** — planner → implementer → reviewer → qa (`.claude/agents/`)
+- 🤖 **에이전트 팀** — planner → implementer → reviewer → qa (`.{폴더}/agents/`)
 - 🎯 **오케스트레이터** — `harness-orchestrator` (기능 개발 파이프라인 자동 조율)
 - 🚀 **자동 onboarding** — `harness-adapt` (기존 프로젝트 분석·적응)
 - 🔌 **이식 스크립트** — `setup.ps1` / `setup.sh`
@@ -37,7 +37,6 @@ LLM 기반 코딩 에이전트는 **모델 능력만큼이나 "하네스(harness
 적용 시나리오:
 - 새 프로젝트는 이 레포를 **기반 템플릿**으로 복제해 출발
 - 기존 운영 코드(ITO)는 이 레포의 규칙을 **점진 도입**
-- AM(유지보수) 과제는 Surgical Changes + reviewer/qa 강제로 **회귀 리스크 최소화**
 
 ---
 
@@ -54,7 +53,7 @@ LLM 기반 코딩 에이전트는 **모델 능력만큼이나 "하네스(harness
 
 ### B. 기존 운영 코드 (ITO) 에 적용 시
 
-1. 기존 레포 루트에 `CLAUDE.md`, `docs/rules/`, `.claude/skills/` 를 **병합 도입**
+1. 기존 레포 루트에 `CLAUDE.md`, `docs/rules/`, `.{폴더}/skills/` 를 **병합 도입**
 2. **현재 소스코드를 분석해 `docs/rules/01-project-structure.md`를 최신화**
    - 실제 디렉토리 구조, 사용 중인 언어/프레임워크/테스트 도구 등 반영
    - 잠정(Tentative) 라벨 제거, 실제 운영 스택 명시
@@ -62,16 +61,11 @@ LLM 기반 코딩 에이전트는 **모델 능력만큼이나 "하네스(harness
 4. `Surgical Changes` 원칙(인접 코드 "개선" 금지)을 가장 강하게 강조
 5. 변경 이력은 도입 시점부터 `docs/changelog/` 에 기록 시작
 
-### C. AM (유지보수) 과제에 적용 시
-
-AM(Application Maintenance) — 유지보수·핫픽스·작은 기능 추가가 다수인 운영 과제에도 적용 가능.
-**오히려 AM에 더 강한 측면**이 있음. 단, 일부 조정 권장.
-
 #### 적합 (강점)
 
 | 하네스 요소 | AM에서의 가치 |
 |------------|---------------|
-| Surgical Changes 원칙 | 인접 코드 "개선" 금지 → 회귀 리스크 최소화 (AM 1순위 요건) |
+| Surgical Changes 원칙 | 인접 코드 "개선" 금지 → 회귀 리스크 최소화 |
 | SDD 워크플로우 | 운영 코드 즉흥 수정 방지, 스펙→계획→구현 강제 |
 | Verification Loop | 테스트·타입체크·실제 실행 검증 → 회귀 조기 발견 |
 | reviewer + qa agent | 스펙 준수 + 통합 정합성 이중 검증 |
@@ -90,13 +84,6 @@ AM(Application Maintenance) — 유지보수·핫픽스·작은 기능 추가가
 | SLA · 시간 압박 | `harness-orchestrator`에 "긴급 핫픽스 모드" 추가 (planner 우회, implementer + reviewer만) |
 | 사내 결재 · 머지 정책 | `docs/rules/06-branch-strategy.md`를 사내 정책으로 덮어쓰기 |
 | touch 금지 모듈 (운영 안전 영역) | `.specify/memory/constitution.md`에 "수정 금지 모듈" 명시 |
-
-#### 효용 낮은 케이스
-
-- 코드 변경 거의 없음 (설정·데이터 운영만)
-- 사내 AM 워크플로우가 이미 강하게 정해져 있고 LLM 개입 여지 없음
-
-> 옵션: **`am-mode` 스킬 신설 가능** — 긴급 핫픽스 모드 (planner 우회, surgical only) + 티켓 ID 자동 매핑. 필요 시 별도 요청.
 
 ---
 
@@ -129,7 +116,7 @@ AM(Application Maintenance) — 유지보수·핫픽스·작은 기능 추가가
 | **Claude Code** | AI 코딩 에이전트 CLI |
 | **Git 2.30+** | 버전 관리 |
 
-### 권장 스킬 (역할별 분리)
+### 권장 스킬 (역할별 분리(선택))
 
 | 스킬 팩 | 출처 | 주요 역할 |
 |---|---|---|
@@ -137,10 +124,10 @@ AM(Application Maintenance) — 유지보수·핫픽스·작은 기능 추가가
 | **speckit** | `github/spec-kit` | SDD 4단계 워크플로우 |
 | **gstack** | `garrytan/gstack` | 가상 개발팀(CEO/Eng Mgr/QA/Ship) 슬래시 명령 |
 | **ECC** | `affaan-m/everything-claude-code` | Python/FastAPI 패턴, 테스트, 코딩 표준 |
-| **caveman** | `JuliusBrussee/caveman` (본 프로젝트 `.claude/skills/caveman/`) | 응답 압축 모드 (토큰 ~75% 절감) |
+| **caveman** | `JuliusBrussee/caveman` (본 프로젝트 `.{폴더}/skills/caveman/`) | 응답 압축 모드 (토큰 ~75% 절감) |
 | **rtk-ai** | `rtk-ai/rtk` | LLM 토큰 사용량 60-90% 절감 (CLI proxy) |
-| **harness-orchestrator** | 본 프로젝트 (`.claude/skills/`) | 기능 개발 파이프라인 자동 조율 (planner → implementer → reviewer → qa) |
-| **harness-adapt** | 본 프로젝트 (`.claude/skills/`) | 기존 프로젝트 자동 분석·적응 (onboarding) |
+| **harness-orchestrator** | 본 프로젝트 (`.{폴더}/skills/`) | 기능 개발 파이프라인 자동 조율 (planner → implementer → reviewer → qa) |
+| **harness-adapt** | 본 프로젝트 (`.{폴더}/skills/`) | 기존 프로젝트 자동 분석·적응 (onboarding) |
 
 상세 매핑: `docs/rules/03-ai-agent-guidelines.md`
 
@@ -163,6 +150,7 @@ https://github.com/obra/superpowers
 https://github.com/github/spec-kit
 https://github.com/multica-ai/andrej-karpathy-skills
 https://github.com/rtk-ai/rtk
+https://github.com/JuliusBrussee/caveman
 
 # 3) 본 레포지토리는 다음을 프로젝트 로컬로 이미 포함합니다 — 추가 설치 없이 사용 가능:
 #    - .claude/skills/speckit-*             (Speckit 4단계 스킬)
