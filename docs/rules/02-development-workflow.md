@@ -13,16 +13,16 @@
 
 | 단계 | 명령 | 생성 파일 | 설명 |
 |---|---|---|---|
-| 1 | `/speckit-specify` | `docs/spec/{feature}/spec.md` | 기능 명세 작성 |
-| 2 | `/speckit-plan` | `docs/spec/{feature}/plan.md` | 구현 계획 수립 |
-| 3 | `/speckit-tasks` | `docs/spec/{feature}/tasks.md` | 작업 분해 |
+| 1 | `/speckit-specify` | `docs/specs/{feature}/spec.md` | 기능 명세 작성 |
+| 2 | `/speckit-plan` | `docs/specs/{feature}/plan.md` | 구현 계획 수립 |
+| 3 | `/speckit-tasks` | `docs/specs/{feature}/tasks.md` | 작업 분해 |
 | 4 | `/speckit-implement` | `src/` | 실제 구현 |
 
 > ⚡ **단계 이동 전 반드시 사용자 확인 필요** — 각 단계 완료 후 다음 단계로 넘어가기 전 사용자에게 확인
 
 ### 스펙 파일 관리 규칙
 
-1. **기능별 디렉토리 분리**: `docs/spec/{feature-name}/`
+1. **기능별 디렉토리 분리**: `docs/specs/{feature-name}/`
 2. **날짜 필수 기록**:
    - 생성일자: `Created: YYYY-MM-DD`
    - 수정일자: `Updated: YYYY-MM-DD`
@@ -54,12 +54,12 @@
 
 ### tasks.md 체크박스 추적 규칙
 
-**`/speckit-tasks` 로 생성된 `docs/spec/{feature}/tasks.md` 파일에는 `[ ]` 체크박스가 포함됩니다.**  
+**`/speckit-tasks` 로 생성된 `docs/specs/{feature}/tasks.md` 파일에는 `[ ]` 체크박스가 포함됩니다.**  
 각 태스크 구현 완료 시 체크박스를 `[x]` 로 업데이트하세요.
 
 **규칙**:
 1. **태스크 시작 시**: 해당 태스크를 `[ ]` 상태에서 작업 시작
-2. **태스크 완료 시**: 즉시 `[x]` 로 변경하고, `docs/spec/{feature}/tasks.md` 파일 업데이트
+2. **태스크 완료 시**: 즉시 `[x]` 로 변경하고, `docs/specs/{feature}/tasks.md` 파일 업데이트
 3. **진행 상황 확인**: `question` 툴 또는 텍스트로 현재 완료율 보고 가능
 4. **모든 태스크 완료 시**: tasks.md 의 모든 체크박스가 `[x]` 상태가 되었는지 최종 확인
 
