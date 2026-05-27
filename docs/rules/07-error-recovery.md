@@ -80,7 +80,7 @@ git push --force
 ### 스펙 롤백
 
 스펙을 수정했다가 되돌려야 할 경우:
-1. `docs/spec/{feature}/spec.md` 이전 버전 복원 (git 이용)
+1. `docs/specs/{feature}/spec.md` 이전 버전 복원 (git 이용)
 2. 영향받은 `plan.md`, `tasks.md` 함께 검토
 3. changelog에 롤백 사유 기록
 
