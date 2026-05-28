@@ -3,7 +3,15 @@
 # Usage:
 #   .\setup.ps1 -TargetDir "C:\path\to\project"
 #   .\setup.ps1 -TargetDir "../my-project" -DryRun
-#   .\setup.ps1 -TargetDir "../my-project" -Opencode   # rename .claude -> .opencode and rewrite contents
+#   .\setup.ps1 -TargetDir "../my-project" -Opencode
+#     ↳ Full opencode adaptation:
+#       - .claude/agents   -> .opencode/agent   (singular + frontmatter cleanup: drop name, add mode: subagent)
+#       - .claude/skills   -> .opencode/command (semantic; SKILL.md -> <skill-name>.md)
+#       - .claude/commands -> .opencode/command (merged)
+#       - .claude/rules    -> .opencode/rule    (singular)
+#       - .claude/settings.json -> ./opencode.json (project root; _note key added — hook schema needs manual review)
+#       - Content references rewritten with same path mapping
+#       - Skill/Agent tool call sites in markdown bodies require manual review (not auto-converted)
 
 param(
     [Parameter(Mandatory=$true, HelpMessage="Target project directory")]
@@ -26,10 +34,22 @@ $TextExtensions = @('.md', '.json', '.ps1', '.sh', '.toml', '.yaml', '.yml', '.t
 
 function Convert-PathForOpencode {
     param([string]$Path)
-    if ($Opencode) {
-        return $Path -replace '\.claude', '.opencode'
-    }
-    return $Path
+    if (-not $Opencode) { return $Path }
+
+    $mapped = $Path
+    # settings.json -> opencode.json (project root, NOT under .opencode/)
+    $mapped = $mapped -replace '\.claude[\\/]+settings\.json', 'opencode.json'
+    # agents -> agent (singular)
+    $mapped = $mapped -replace '\.claude[\\/]+agents', '.opencode\agent'
+    # skills -> command (semantic mapping)
+    $mapped = $mapped -replace '\.claude[\\/]+skills', '.opencode\command'
+    # commands -> command (merged with skills)
+    $mapped = $mapped -replace '\.claude[\\/]+commands', '.opencode\command'
+    # rules -> rule (singular)
+    $mapped = $mapped -replace '\.claude[\\/]+rules', '.opencode\rule'
+    # fallback for any other .claude reference (e.g., bare ".claude" or .claude/foo)
+    $mapped = $mapped -replace '\.claude', '.opencode'
+    return $mapped
 }
 
 function Convert-ContentForOpencode {
@@ -49,9 +69,69 @@ function Convert-ContentForOpencode {
         if ($TextExtensions -notcontains $f.Extension.ToLower()) { continue }
 
         $content = [System.IO.File]::ReadAllText($f.FullName, [System.Text.Encoding]::UTF8)
-        if ($content -match '\.claude') {
-            $newContent = $content -replace '\.claude', '.opencode'
-            [System.IO.File]::WriteAllText($f.FullName, $newContent, $utf8NoBom)
+        if ($content -notmatch '\.claude') { continue }
+
+        $new = $content
+        # Priority-ordered: directory-aware mappings first, fallback last
+        $new = $new -replace '\.claude([\\/])agents',   '.opencode$1agent'
+        $new = $new -replace '\.claude([\\/])skills',   '.opencode$1command'
+        $new = $new -replace '\.claude([\\/])commands', '.opencode$1command'
+        $new = $new -replace '\.claude([\\/])rules',    '.opencode$1rule'
+        # fallback (bare .claude or .claude/<other>)
+        $new = $new -replace '\.claude',                '.opencode'
+
+        [System.IO.File]::WriteAllText($f.FullName, $new, $utf8NoBom)
+    }
+}
+
+function Convert-AgentFrontmatter {
+    # Cleanup agent .md frontmatter for opencode:
+    #   - remove `name:` line (filename takes over in opencode)
+    #   - add `mode: subagent` after `description:` if missing
+    param([string]$AgentDir)
+    if (-not $Opencode -or -not (Test-Path $AgentDir)) { return }
+
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+
+    Get-ChildItem -Path $AgentDir -Recurse -Filter "*.md" -File | ForEach-Object {
+        $content = [System.IO.File]::ReadAllText($_.FullName, [System.Text.Encoding]::UTF8)
+        $modified = $false
+
+        # Only operate on files with frontmatter block
+        if ($content -notmatch '(?s)^---\r?\n.*?\r?\n---\r?\n') { return }
+
+        # Remove `name:` line
+        if ($content -match '(?m)^name:\s*[^\r\n]+\r?\n') {
+            $content = $content -replace '(?m)^name:\s*[^\r\n]+\r?\n', ''
+            $modified = $true
+        }
+
+        # Add `mode: subagent` after first `description:` if not present anywhere
+        if ($content -notmatch '(?m)^mode:\s*\S') {
+            if ($content -match '(?m)^description:[^\r\n]+\r?\n') {
+                $content = $content -replace '(?m)^(description:[^\r\n]+\r?\n)', "`$1mode: subagent`r`n"
+                $modified = $true
+            }
+        }
+
+        if ($modified) {
+            [System.IO.File]::WriteAllText($_.FullName, $content, $utf8NoBom)
+        }
+    }
+}
+
+function Rename-SkillToCommand {
+    # opencode has no SKILL.md concept. Rename each <skill>/SKILL.md to <skill>/<skill>.md
+    # so opencode discovers the command file. Companion files (scripts/, references/) kept in place.
+    param([string]$CommandDir)
+    if (-not $Opencode -or -not (Test-Path $CommandDir)) { return }
+
+    Get-ChildItem -Path $CommandDir -Recurse -Filter "SKILL.md" -File | ForEach-Object {
+        $parentName = $_.Directory.Name
+        $safeName   = $parentName -replace '[^a-zA-Z0-9_\-]', '-'
+        $newPath    = Join-Path $_.Directory.FullName "$safeName.md"
+        if (-not (Test-Path $newPath)) {
+            Move-Item -Path $_.FullName -Destination $newPath -Force
         }
     }
 }
@@ -84,7 +164,14 @@ Write-Host "Harness Setup" -ForegroundColor White
 Write-Host "  Source: $SourceDir"
 Write-Host "  Target: $TargetDir"
 if ($DryRun)   { Write-Host "  Mode: DRY RUN (no actual copy)" -ForegroundColor Yellow }
-if ($Opencode) { Write-Host "  Mode: OPENCODE (.claude -> .opencode rename + content rewrite)" -ForegroundColor Cyan }
+if ($Opencode) {
+    Write-Host "  Mode: OPENCODE" -ForegroundColor Cyan
+    Write-Host "    .claude/agents   -> .opencode/agent     (singular + frontmatter cleanup)" -ForegroundColor Cyan
+    Write-Host "    .claude/skills   -> .opencode/command   (semantic; SKILL.md renamed)" -ForegroundColor Cyan
+    Write-Host "    .claude/commands -> .opencode/command   (merged)" -ForegroundColor Cyan
+    Write-Host "    .claude/rules    -> .opencode/rule" -ForegroundColor Cyan
+    Write-Host "    .claude/settings.json -> ./opencode.json (root, _note added)" -ForegroundColor Cyan
+}
 Write-Host ""
 
 # Create target dir
@@ -95,24 +182,55 @@ if (-not $DryRun -and -not (Test-Path $TargetDir)) {
 # --- Copy ---
 Write-Host "Copying..." -ForegroundColor White
 
-# Agents
+# Agents (L1 4 + L2 11 = 15)
 Copy-HarnessDir ".claude\agents"  "Agent definitions"
 
-# Skills
+# Skills (caveman, speckit-*, harness-*, ecc/, superpowers/)
 Copy-HarnessDir ".claude\skills"  "Skills"
 
-# settings.json (hooks)
-$settingsSrc     = Join-Path $SourceDir ".claude\settings.json"
-$settingsDestRel = Convert-PathForOpencode ".claude\settings.json"
-$settingsDest    = Join-Path $TargetDir $settingsDestRel
+# Slash commands (gan-design, multi-*, update-*, /test-coverage 등 10개)
+Copy-HarnessDir ".claude\commands"  "Slash commands"
+
+# ECC reference rules (.claude/rules/ecc/)
+Copy-HarnessDir ".claude\rules"  "ECC reference rules"
+
+# Opencode-specific post-processing (after directory copies, before settings.json)
+if ($Opencode -and -not $DryRun) {
+    $agentTarget   = Join-Path $TargetDir ".opencode\agent"
+    $commandTarget = Join-Path $TargetDir ".opencode\command"
+    Convert-AgentFrontmatter $agentTarget
+    Rename-SkillToCommand    $commandTarget
+    Write-Host "  [OK] Opencode post-process (agent frontmatter, SKILL.md rename)" -ForegroundColor Green
+}
+
+# settings.json -> .claude/settings.json (default) OR opencode.json at root (-Opencode)
+$settingsSrc = Join-Path $SourceDir ".claude\settings.json"
 if (Test-Path $settingsSrc) {
-    if (-not $DryRun) {
+    if ($Opencode) {
+        $settingsDest    = Join-Path $TargetDir "opencode.json"
+        $settingsDestRel = "opencode.json"
+    } else {
+        $settingsDest    = Join-Path $TargetDir ".claude\settings.json"
+        $settingsDestRel = ".claude\settings.json"
+    }
+
+    if ($DryRun) {
+        Write-Host "  [DRY RUN] $settingsDestRel" -ForegroundColor Gray
+    } else {
         New-Item -ItemType Directory -Force -Path (Split-Path $settingsDest) | Out-Null
         Copy-Item $settingsSrc $settingsDest -Force
         Convert-ContentForOpencode $settingsDest
+
+        if ($Opencode) {
+            # Insert _note key to flag manual hook schema review
+            $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+            $json = [System.IO.File]::ReadAllText($settingsDest, [System.Text.Encoding]::UTF8)
+            $note = '"_note": "Converted from .claude/settings.json by setup.ps1 -Opencode. Hook keys (UserPromptSubmit, PreToolUse, etc.) may need migration to opencode event names (user_prompt_submit, pre_tool_use, ...). Verify per your opencode fork docs.",'
+            $json = $json -replace '(?s)^\s*\{', "{`r`n  $note"
+            [System.IO.File]::WriteAllText($settingsDest, $json, $utf8NoBom)
+        }
+
         Write-Host "  [OK] settings ($settingsDestRel)" -ForegroundColor Green
-    } else {
-        Write-Host "  [DRY RUN] $settingsDestRel" -ForegroundColor Gray
     }
 }
 
@@ -181,7 +299,12 @@ Write-Host "  3. docs\rules\01-project-structure.md  - finalize actual tech stac
 Write-Host "  4. (optional) docs\rules\03-ai-agent-guidelines.md  - list project skills"
 if ($Opencode) {
     Write-Host ""
-    Write-Host "  Opencode mode: harness copied to '$agentsDir\' instead of '.claude\'." -ForegroundColor Cyan
-    Write-Host "  Review the copied files and finalize any remaining tool/agent translations manually." -ForegroundColor Cyan
+    Write-Host "  Opencode mode — additional manual review required:" -ForegroundColor Cyan
+    Write-Host "    a) Skill bodies in .opencode/command/*.md still reference 'Agent(...)' / 'Skill(...)' tool calls." -ForegroundColor Cyan
+    Write-Host "       Replace with opencode '@agent-name' / '/command-name' per your fork." -ForegroundColor Cyan
+    Write-Host "    b) opencode.json has hook keys (UserPromptSubmit, etc.) — migrate to opencode event names." -ForegroundColor Cyan
+    Write-Host "    c) Decide which agent should be 'mode: primary' (default: all subagent). Update one frontmatter." -ForegroundColor Cyan
+    Write-Host "    d) Verify .opencode/command/<skill>/ nested structure with companion files (scripts/) is supported by your fork." -ForegroundColor Cyan
+    Write-Host "    e) Check .opencode/rule/ vs your fork's expected rules directory name." -ForegroundColor Cyan
 }
 Write-Host ""

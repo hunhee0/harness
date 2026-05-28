@@ -13,10 +13,11 @@
 |---|---|
 | 정체 | 하네스(harness) 명세서 |
 | 사용 대상 | ① 새 프로젝트 시작 ② 기존 운영(ITO) 코드 |
-| 핵심 도구 | Speckit + 에이전트 팀 + 오케스트레이터 |
+| 핵심 도구 | Speckit + 2계층 에이전트 팀 + 오케스트레이터 + 3축 통합 디자인 |
 | 핵심 스킬 | `harness-orchestrator` (개발 파이프라인) · `harness-adapt` (자동 onboarding) · `caveman` (토큰 절감) |
-| 에이전트 팀 | `planner` → `implementer` → `reviewer` → `qa` |
-| 개발 방식 | SDD + Speckit + TDD + Verification Loop |
+| 에이전트 팀 | **L1 워크플로 4개**: `planner`→`implementer`→`reviewer`→`qa` · **L2 전문 11개**: architect / *-reviewer / tdd-guide / doc-updater 등 |
+| 통합 스킬 팩 | **ECC** 21개 (도메인 패턴) · **superpowers** 8개 (메타 워크플로) · **speckit** 5개 (SDD) · **commands** 10개 (멀티모델·디자인 루프·동기화) |
+| 개발 방식 | SDD + Speckit + TDD + Verification Loop + 수직 위임 / 수평 팬아웃 / 통합 머지 |
 | 철학 | Karpathy 4원칙 · Progressive Disclosure · Net-zero |
 
 ---
@@ -29,9 +30,11 @@ LLM 기반 코딩 에이전트는 **모델 능력만큼이나 "하네스(harness
 이 레포지토리는 그 하네스의 **재사용 가능한 기본형(template)**을 제공하며, 다음을 포함합니다:
 
 - 📋 **규칙·메모리** — `CLAUDE.md` + `docs/rules/` (7개 파일)
-- 🤖 **에이전트 팀** — planner → implementer → reviewer → qa (`.{폴더}/agents/`)
-- 🎯 **오케스트레이터** — `harness-orchestrator` (기능 개발 파이프라인 자동 조율)
+- 🤖 **2계층 에이전트 팀** — L1 워크플로 4개 + L2 전문 11개 (`.claude/agents/`)
+- 🎯 **오케스트레이터** — `harness-orchestrator` (3축 통합 디자인으로 파이프라인 + 팬아웃 자동 조율)
 - 🚀 **자동 onboarding** — `harness-adapt` (기존 프로젝트 분석·적응)
+- 🧩 **스킬 팩 (이미 포함)** — speckit 5 · ECC 21 · superpowers 8 · caveman · harness-* — 추가 설치 불필요
+- ⚡ **슬래시 커맨드** — gan-design / multi-* / update-* / /test-coverage 등 10개
 - 🔌 **이식 스크립트** — `setup.ps1` / `setup.sh`
 
 적용 시나리오:
@@ -116,48 +119,42 @@ LLM 기반 코딩 에이전트는 **모델 능력만큼이나 "하네스(harness
 | **Claude Code** | AI 코딩 에이전트 CLI |
 | **Git 2.30+** | 버전 관리 |
 
-### 권장 스킬 (역할별 분리(선택))
+### 통합 스킬 팩 (이미 프로젝트 로컬 포함)
 
-| 스킬 팩 | 출처 | 주요 역할 |
+추가 설치 없이 사용 가능. 상세 매핑은 `docs/rules/03-ai-agent-guidelines.md`.
+
+| 스킬 팩 | 출처 | 주요 역할 | 위치 |
+|---|---|---|---|
+| **speckit** (5개) | `github/spec-kit` | SDD: constitution / specify / plan / tasks / implement | `.claude/skills/speckit-*/` |
+| **ECC** (21개) | `affaan-m/everything-claude-code` | Python·FastAPI·Java/Spring·Next.js·UI/모션·API·테스트 패턴 | `.claude/skills/ecc/` |
+| **superpowers** (8개) | `obra/superpowers` | brainstorming·dispatching-parallel-agents·TDD·debugging·verification·worktrees·code-review | `.claude/skills/superpowers/` |
+| **caveman** | `JuliusBrussee/caveman` | 응답 압축 (토큰 ~75% 절감, always-on hook) | `.claude/skills/caveman/` |
+| **harness-orchestrator** | 본 프로젝트 | 기능 개발 파이프라인 진입점 (3축 통합 디자인 자동 조율) | `.claude/skills/harness-orchestrator/` |
+| **harness-adapt** | 본 프로젝트 | 기존 프로젝트 자동 분석·적응 (onboarding) | `.claude/skills/harness-adapt/` |
+
+### 슬래시 커맨드 (10개)
+
+`.claude/commands/`. `/gan-design`, `/loop-start`, `/multi-{plan,workflow,backend,frontend}`, `/python-review`, `/test-coverage`, `/update-codemaps`, `/update-docs`.
+
+### 옵션 (전역 설치, 사용자 환경)
+
+| 도구 | 출처 | 용도 |
 |---|---|---|
-| **superpowers** | `obra/superpowers` | TDD, 디버깅, 코드리뷰, 서브에이전트 위임 |
-| **speckit** | `github/spec-kit` | SDD 4단계 워크플로우 |
-| **gstack** | `garrytan/gstack` | 가상 개발팀(CEO/Eng Mgr/QA/Ship) 슬래시 명령 |
-| **ECC** | `affaan-m/everything-claude-code` | Python/FastAPI 패턴, 테스트, 코딩 표준 |
-| **caveman** | `JuliusBrussee/caveman` (본 프로젝트 `.{폴더}/skills/caveman/`) | 응답 압축 모드 (토큰 ~75% 절감) |
 | **rtk-ai** | `rtk-ai/rtk` | LLM 토큰 사용량 60-90% 절감 (CLI proxy) |
-| **harness-orchestrator** | 본 프로젝트 (`.{폴더}/skills/`) | 기능 개발 파이프라인 자동 조율 (planner → implementer → reviewer → qa) |
-| **harness-adapt** | 본 프로젝트 (`.{폴더}/skills/`) | 기존 프로젝트 자동 분석·적응 (onboarding) |
+| **gstack** | `garrytan/gstack` | 가상 개발팀 슬래시 명령 (본 레포에는 미포함) |
+| **andrej-karpathy-skills** | `multica-ai/andrej-karpathy-skills` | Karpathy 4원칙 스킬화 |
 
-상세 매핑: `docs/rules/03-ai-agent-guidelines.md`
-
-### 설치 명령 (예시)
+### 설치 명령 (옵션)
 
 ```bash
-# 1) rtk-ai — Rust Token Killer
-#    공식 가이드: https://github.com/rtk-ai/rtk
-cargo install rtk          # 또는 brew/스크립트, 리포 README 참조
-rtk init -g                # Claude Code 전역 통합
+# rtk-ai — Rust Token Killer (전역)
+cargo install rtk
+rtk init -g
 
-# 2) 전역 스킬 설치 (~/.claude/skills/)
+# 전역 스킬 설치 (선택)
 mkdir -p ~/.claude/skills && cd ~/.claude/skills
-
-# 별도 공식 가이드 참조
-https://github.com/garrytan/gstack.git
-https://github.com/affaan-m/everything-claude-code.git
-https://github.com/JuliusBrussee/caveman.git
-https://github.com/obra/superpowers
-https://github.com/github/spec-kit
-https://github.com/multica-ai/andrej-karpathy-skills
-https://github.com/rtk-ai/rtk
-https://github.com/JuliusBrussee/caveman
-
-# 3) 본 레포지토리는 다음을 프로젝트 로컬로 이미 포함합니다 — 추가 설치 없이 사용 가능:
-#    - .claude/skills/speckit-*             (Speckit 4단계 스킬)
-#    - .claude/skills/caveman               (응답 압축)
-#    - .claude/skills/harness-orchestrator  (개발 파이프라인 조율)
-#    - .claude/skills/harness-adapt         (기존 프로젝트 자동 적응)
-#    - .claude/agents/                      (planner / implementer / reviewer / qa)
+git clone https://github.com/rtk-ai/rtk
+git clone https://github.com/multica-ai/andrej-karpathy-skills
 ```
 
 > ⚠️ 정확한 설치 절차는 각 리포지토리의 최신 README 가 우선합니다.
@@ -175,18 +172,30 @@ https://github.com/JuliusBrussee/caveman
 
 각 단계 이동 전 **사용자 확인 필수**. `tasks.md` 체크박스는 `[ ]→[x]` 로 실시간 갱신.
 
-### 에이전트 파이프라인 (harness-orchestrator)
+### 에이전트 파이프라인 (harness-orchestrator) — 2계층 + 3축 통합
 
-기능 개발 요청 시 `harness-orchestrator` 스킬이 자동 트리거되어 4개 에이전트를 순서대로 호출:
+기능 개발 요청 시 `harness-orchestrator` 스킬이 자동 트리거되어 L1 에이전트를 순서대로 호출하고, 조건부로 L2 전문 에이전트에 위임·팬아웃:
 
 ```
-planner  →  implementer  →  reviewer  →  qa
-(specs/plan/    (TDD 구현)     (스펙 준수 +     (통합 정합성 +
- tasks 생성)                  코드 품질)       엣지 케이스)
+Phase 0   컨텍스트 확인
+Phase 0.5 스택 감지 ([STACK] 변수 전파)
+Phase 1   planner ─────── (큰 기능: architect ×2 + code-architect 병렬 → 통합)
+Phase 2   implementer ─── (스택별 ecc/* + 메타 superpowers/* 참조)
+Phase 3   reviewer ────── 1차 스펙 단독 → 2차 팬아웃 (stack-reviewer + security-reviewer + code-reviewer 병렬) → 3차 통합
+Phase 4   qa ──────────── (verification-before-completion + systematic-debugging)
+Phase 5   완료 ────────── changelog + doc-updater (README/CODEMAP 동기화) + PR
 ```
 
-각 에이전트 정의는 `.claude/agents/{name}.md`. 오케스트레이터가 단계 간 산출물 전달·에러 핸들링·재시도 관리.
-도메인 특화 에이전트(예: ML의 `data-validator`, 보안중점의 `security-reviewer`)는 `harness-adapt`가 분석 후 자동 권장.
+**3축 통합 디자인** (2026-05-28~):
+
+| 축 | 의미 | 적용 |
+|---|---|---|
+| A. 수직 위임 | L1이 트리거 조건 시 L2·skill 호출 (depth ↑) | 모든 Phase, 항상 활성 |
+| B. 수평 팬아웃 | 같은 Phase 내 N개 agent 병렬 (breadth ↑) | Phase 3 기본, Phase 1/2/4 조건부 |
+| C. 통합 머지 | dedupe·severity boost·충돌 사용자 결정 | Phase 3 (reviewer), Phase 4 (qa) |
+
+각 에이전트 정의는 `.claude/agents/{name}.md`. 오케스트레이터가 단계 간 산출물 전달·에러 핸들링·재시도·팬아웃 비용 정책 관리.
+도메인 특화 분기는 `[STACK]` 기반 자동 (Python/Java/TS 등). `harness-adapt`가 onboarding 시 분석하여 권장 agents 추가.
 
 ### Verification Loop (3단계 실행 루프)
 
@@ -227,30 +236,41 @@ planner  →  implementer  →  reviewer  →  qa
 
 ```
 haness/
-├── CLAUDE.md                        # 하네스 루트 진입점 (이 파일 먼저 읽기)
-├── README.md                        # ← 여기
+├── CLAUDE.md                              # 하네스 루트 진입점 (이 파일 먼저 읽기)
+├── README.md                              # ← 여기
 ├── .claude/
-│   ├── agents/                      # 에이전트 팀 (planner / implementer / reviewer / qa)
-│   ├── skills/                      # 프로젝트 전용 스킬
-│   │   ├── caveman/                 # 응답 토큰 절감
-│   │   ├── speckit-*/               # SDD 4단계 스킬
-│   │   ├── harness-orchestrator/    # 기능 개발 파이프라인 조율
-│   │   └── harness-adapt/           # 기존 프로젝트 자동 적응
-│   └── settings.json                # 훅 + 플러그인 설정
+│   ├── agents/                            # 에이전트 팀 — L1 4 + L2 11 = 15개
+│   │   ├── planner.md, implementer.md, reviewer.md, qa.md            # L1
+│   │   ├── architect.md, code-architect.md                            # L2 설계
+│   │   ├── code-reviewer.md, python-reviewer.md, fastapi-reviewer.md  # L2 리뷰
+│   │   ├── typescript-reviewer.md, java-reviewer.md                   # L2 리뷰
+│   │   ├── security-reviewer.md                                       # L2 보안
+│   │   ├── tdd-guide.md                                               # L2 TDD 게이트
+│   │   ├── doc-updater.md, loop-operator.md                           # L2 운영
+│   ├── skills/
+│   │   ├── caveman/                       # 응답 토큰 절감
+│   │   ├── speckit-*/                     # SDD 5개 (constitution/specify/plan/tasks/implement)
+│   │   ├── harness-orchestrator/          # 기능 개발 파이프라인 조율
+│   │   ├── harness-adapt/                 # 기존 프로젝트 자동 적응
+│   │   ├── ecc/                           # 도메인 패턴·테스트 21개
+│   │   └── superpowers/                   # 메타 워크플로 8개
+│   ├── commands/                          # 슬래시 커맨드 10개
+│   ├── rules/ecc/                         # ECC 부속 규칙 (언어별 패턴·테스트)
+│   └── settings.json                      # 훅 + 권한 설정
 ├── .specify/
 │   ├── memory/
-│   │   ├── constitution.md          # 프로젝트 헌법 (시작 시 작성)
-│   │   └── README.md                # 헌법 작성 가이드
+│   │   ├── constitution.md                # 프로젝트 헌법 (시작 시 작성)
+│   │   └── README.md                      # 헌법 작성 가이드
 │   ├── templates/, scripts/, integrations/   # Speckit 자원
-│   └── *.json                       # Speckit 설정
+│   └── *.json                             # Speckit 설정
 ├── docs/
-│   ├── INSTALL.md                   # 이식 + opencode 변환 가이드
-│   ├── rules/                       # 절대 규칙 (7개 파일)
-│   ├── specs/                        # Speckit 스펙 (기능별, 실 프로젝트 적용 시 생성)
-│   └── changelog/                   # 변경 이력 로그
-├── setup.ps1                        # 하네스 이식 스크립트 (Windows)
-├── setup.sh                         # 하네스 이식 스크립트 (Mac / Linux)
-└── (src/, tests/)                   # 실 프로젝트 적용 시 생성
+│   ├── INSTALL.md                         # 이식 + opencode 변환 가이드
+│   ├── rules/                             # 절대 규칙 7개 파일 (01~07)
+│   ├── specs/                             # Speckit 스펙 (기능별, 실 적용 시 생성)
+│   └── changelog/                         # 변경 이력 로그
+├── setup.ps1                              # Windows 이식 스크립트
+├── setup.sh                               # Mac/Linux 이식 스크립트
+└── (src/, tests/)                         # 실 프로젝트 적용 시 생성
 ```
 
 ---

@@ -46,10 +46,14 @@ chmod +x setup.sh
 
 | 항목 | 경로 | 비고 |
 |------|------|------|
-| 에이전트 정의 | `.claude/agents/` | 4개 (planner / implementer / reviewer / qa) |
-| 스킬 | `.claude/skills/` | speckit-*, caveman, harness-orchestrator |
+| 에이전트 정의 | `.claude/agents/` | **15개** — L1 4 (planner/implementer/reviewer/qa) + L2 11 (architect, code-architect, code-reviewer, python-reviewer, fastapi-reviewer, typescript-reviewer, java-reviewer, security-reviewer, tdd-guide, doc-updater, loop-operator) |
+| 스킬 (운영) | `.claude/skills/` | speckit-* (5: constitution/specify/plan/tasks/implement) · caveman · harness-orchestrator · harness-adapt |
+| 스킬 (ECC 도메인 패턴) | `.claude/skills/ecc/` | **21개** — python·fastapi·java·springboot·jpa·frontend·nextjs·motion·api·tdd 등 |
+| 스킬 (superpowers 메타) | `.claude/skills/superpowers/` | **8개** — brainstorming, dispatching-parallel-agents, requesting/receiving-code-review, test-driven-development, systematic-debugging, verification-before-completion, using-git-worktrees |
+| 슬래시 커맨드 | `.claude/commands/` | **10개** — gan-design, loop-start, multi-{plan,workflow,backend,frontend}, python-review, test-coverage, update-codemaps, update-docs |
+| ECC 부속 규칙 | `.claude/rules/ecc/` | common·java·python·typescript·web 패턴·테스트 |
 | Claude 설정 | `.claude/settings.json` | 훅 포함 |
-| 규칙 | `docs/rules/` | 7개 파일 |
+| 규칙 | `docs/rules/` | 7개 파일 (01~07) |
 | Speckit 자원 | `.specify/templates/`, `.specify/scripts/`, `.specify/integrations/` | 템플릿·스크립트 |
 | Speckit 설정 | `.specify/init-options.json`, `.specify/integration.json` | |
 | 헌법 템플릿 | `.specify/memory/constitution.md` | 빈 템플릿. 사용 가이드는 `.specify/memory/README.md` |
@@ -73,14 +77,18 @@ chmod +x setup.sh
 > 이 프로젝트에 하네스 적용해줘
 
 → **`harness-adapt`** 스킬이 자동 수행:
-- 코드 스택 분석 (매니페스트·디렉토리·도구 감지)
-- 도메인 분류 (백엔드 / 프론트 / 풀스택 / CLI / 라이브러리 / ML / IaC / 모바일)
+- 코드 스택 분석 (매니페스트·디렉토리·도구 감지) → `[STACK]` 키 정규화 (`python-fastapi`/`java-spring`/`ts-next` 등)
+- 도메인 분류 (백엔드 / 프론트 / 풀스택 / CLI / 라이브러리 / ML / IaC / 모바일 / 보안중점)
 - 사용자 확인 후 다음 파일 자동 수정:
-  - `CLAUDE.md` — 프로젝트명·구조·변경 이력 초기화
-  - `docs/rules/01-project-structure.md` — 잠정 라벨 제거, 실제 스택 반영
-  - `docs/rules/03-ai-agent-guidelines.md` — 도메인 특화 agent 권장 추가
-  - (필요 시) `.claude/agents/{도메인 특화}.md` 신규 추가 + orchestrator Phase 보강
-- changelog 자동 기록
+  - `CLAUDE.md` — 프로젝트명·구조·변경 이력 초기화 (Rule 9에 `[STACK]` 값과 활성 L2 기록)
+  - `docs/rules/01-project-structure.md` — 잠정 라벨 제거, 실제 스택 반영 (`.claude/` 트리 — agents L1+L2, skills/ecc, skills/superpowers, commands, rules/ecc 보존)
+  - `docs/rules/03-ai-agent-guidelines.md` — 인벤토리 표 **수정 금지** (Net-zero), 다음만 추가:
+    - **3-2-A 표준 L2 활성화** — 이미 포함된 L2 중 도메인에 맞는 reviewer 팬아웃 신호 (예: `[STACK]=python-fastapi` → fastapi-reviewer/python-reviewer/security-reviewer 활성)
+    - **3-2-B 도메인 특화 신규 생성** — 표준 L2로 커버 안 되는 도메인만 (ML: data-validator/model-evaluator, IaC: iac-validator, 모바일: platform-reviewer)
+  - (3-2-B 적용 시) `.claude/agents/{신규}.md` 생성 + orchestrator Phase 0.5/3-2 매핑 표 보강
+- changelog 자동 기록 (`[STACK]` 키·활성 L2·신규 agent·매핑 보강 여부 포함)
+
+**보존 (수정 안 함)**: ECC 21·superpowers 8·commands 10·L1 4 agent·기존 L2 11 agent 본문. 03 의 인벤토리 표.
 
 상세: `.claude/skills/harness-adapt/SKILL.md`
 
@@ -143,9 +151,13 @@ chmod +x setup.sh
 # 디렉토리 단순 이동 (이름 변경)
 mv .claude/agents      .opencode/agent
 mv .claude/skills      .opencode/command   # 의미 변환 필요 (아래 Step 3 참조)
+mv .claude/commands    .opencode/command/  # 슬래시 커맨드는 그대로 command 매핑 가능 (병합 주의)
+# .claude/rules/ecc/ 는 opencode 측 rules 디렉토리로 이동하거나 docs/rules/ 로 흡수 (사내 fork 정책 확인)
 ```
 
 > 단순 이동만으로는 부족. 스킬은 의미적으로 command(또는 primary agent)로 재정의 필요.
+>
+> **자원 규모 의식**: 이식 대상은 agents 15 + skills ~37 (speckit 5 + harness 3 + ecc 21 + superpowers 8) + commands 10. 변환 시 우선순위는 L1 4 + harness-orchestrator/adapt 부터.
 
 #### Step 2. 에이전트 frontmatter 변환
 
@@ -281,13 +293,17 @@ Agent(
 
 ### 변환 후 검증 체크리스트
 
-- [ ] `.opencode/agent/` 4개 파일 모두 frontmatter 유효 (`description`, `mode`, `tools` 필수)
+- [ ] `.opencode/agent/` 15개 파일 (L1 4 + L2 11) 모두 frontmatter 유효 (`description`, `mode`, `tools` 필수)
+- [ ] L1 4개는 `mode: subagent`, L2 reviewer 류도 `mode: subagent` (Phase 3 팬아웃 호출 대상)
 - [ ] `mode` / `model` / `tools` 필드가 사내 정책 준수
 - [ ] 오케스트레이터 command가 트리거 키워드로 정상 호출됨
-- [ ] 에이전트 간 호출이 사내 spawn/task API 사용
+- [ ] 에이전트 간 호출이 사내 spawn/task API 사용 (Phase 3 팬아웃은 **같은 응답에서 N개 spawn 동시 호출** 가능해야 함 — 순차 호출만 지원하면 토큰·시간 비용 N배)
+- [ ] commands 10개 (multi-* / gan-design / update-* / test-coverage 등) 변환·등록
+- [ ] ECC/superpowers 스킬 → command 변환 또는 docs 참조로 분리 (호출 횟수 적은 스킬은 docs/ref/ 로 흡수)
 - [ ] 훅이 caveman 리마인더 정상 주입
 - [ ] `docs/rules/`가 LLM 컨텍스트로 로딩되는지 확인 (자동 로딩 메커니즘 차이 가능)
 - [ ] `CLAUDE.md` → opencode가 동등한 진입 문서를 인식하는지 확인 (사내 fork가 `OPENCODE.md` 등을 쓸 수 있음)
+- [ ] `[STACK]` 변수 전파 매커니즘 — opencode에서 spawn 시 context 변수 전달 방식 확인
 
 ### 사내 fork 차이 검토 가이드
 

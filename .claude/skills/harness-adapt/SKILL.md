@@ -104,6 +104,25 @@ flags:
   has_frontend: true|false
 ```
 
+### 1-6. `[STACK]` 키 매핑 (orchestrator 호환 필수)
+
+`harness-orchestrator/SKILL.md` Phase 0.5 + 각 L1 agent.md 에서 사용하는 `[STACK]` 키. 감지 결과를 다음 키로 정규화하여 모든 산출물(`spec.md` 헤더·orchestrator 매핑 표)에 일관 적용:
+
+| 감지 조건 | `[STACK]` 키 |
+|-----------|---------------|
+| `pyproject.toml`/`requirements.txt` + FastAPI 의존 | `python-fastapi` |
+| `pyproject.toml`/`requirements.txt` (일반 Python) | `python` |
+| `pom.xml`/`build.gradle` + Spring 의존 | `java-spring` |
+| `pom.xml`/`build.gradle` (일반 Java/Kotlin) | `java` |
+| `package.json` + `next.config.*` | `ts-next` |
+| `package.json` + `*.tsx`/`*.ts` 다수 | `typescript` |
+| `package.json` (JS만) | `javascript` |
+| `go.mod` | `go` (신규 — orchestrator 매핑 표에 보강 필요) |
+| `Cargo.toml` | `rust` (신규) |
+| 기타 (Ruby/PHP/Swift/Dart 등) | 언어 키 그대로 사용 + orchestrator 매핑 표 보강 |
+
+**다중 스택 (모노레포·풀스택)**: `[STACK]=[python-fastapi, ts-next]` 배열 형태로 저장. Phase 3 reviewer 팬아웃이 변경 파일별로 분기.
+
 ---
 
 ## Phase 2: 도메인 분류
@@ -143,8 +162,9 @@ flags:
 | 변경 | 출처 |
 |------|------|
 | 🟡 잠정(Tentative) 라벨 제거 | 확정 스택 적용 |
-| "잠정 기술 스택 후보" 표 → 실제 스택 표 | Phase 1 결과 |
+| "잠정 기술 스택 후보" 표 → 실제 스택 표 (`[STACK]` 키 포함) | Phase 1-5/1-6 결과 |
 | "예시 src/ 레이아웃" → 실제 디렉토리 트리 | Phase 1-2 결과 |
+| `.claude/` 디렉토리 트리는 유지 (agents L1+L2, skills/ecc, skills/superpowers, commands, rules/ecc 포함) | 하네스 표준 자원 — 도메인 무관 |
 | "아키텍처 원칙" 섹션 | 기존 유지 (도메인 무관) |
 
 #### `CLAUDE.md`
@@ -152,37 +172,61 @@ flags:
 | 변경 | 내용 |
 |------|------|
 | 제목 | `# CLAUDE.md — {프로젝트명} 진입점`으로 보정 |
-| "프로젝트 구조 개요" | 실제 디렉토리 트리 반영 |
-| Rule 9 변경 이력 테이블 | 초기화 → 첫 행에 "하네스 적응(harness-adapt) 적용" 기록 |
+| "프로젝트 구조 개요" | 실제 디렉토리 트리 반영. `.claude/` 하위 (agents/skills/commands/rules) 인벤토리는 그대로 유지 |
+| Rule 9 변경 이력 테이블 | 초기화 → 첫 행에 "하네스 적응(harness-adapt) 적용 — 스택: `[STACK]` 값, 활성화 L2: ..." 기록 |
+| Rule 9 자원 줄 | "스킬 자원: speckit/ECC/superpowers/commands 인벤토리는 03 참조"로 유지 |
 
 #### `docs/rules/03-ai-agent-guidelines.md`
 
+03은 이미 ECC 21·superpowers 8·agents L1+L2 15·commands 10 인벤토리를 완비. **인벤토리 표는 손대지 말 것** (Net-zero). 다음 항목만 추가:
+
 | 변경 | 조건 |
 |------|------|
-| "프로젝트 에이전트 팀" 섹션에 도메인 특화 agent 권장 추가 | 도메인 분류 결과 따라 |
-| 외부 스킬 목록 (superpowers/ECC/gstack 등) | 기존 유지, 도메인 무관 항목만 추가 |
+| "L2 활성화 권장 표" 신규 섹션 | 도메인 분류 결과 따라 — 활성 L2와 적용 시점 명시 (아래 3-2-A 표 사용) |
+| "도메인 특화 신규 agent" 신규 섹션 | 표준 L2로 커버 안 되는 도메인일 때만 (아래 3-2-B 표) |
+| 기존 인벤토리 표 | **수정 금지** — 03 의 ECC/superpowers/commands/agents 항목은 그대로 유지 |
 
-#### 도메인 특화 agent 신규 생성 (필요 시)
+##### 3-2-A. 표준 L2 활성화 권장 (이미 포함, 활성화 신호만 추가)
 
-다음 도메인은 추가 agent 권장. 사용자 확인 후 생성:
+도메인 분류 결과에 따라 다음 L2 agent를 reviewer 팬아웃 라우팅에 자동 포함시키도록 03에 신호 기록:
 
-| 도메인 | 권장 추가 agent |
-|--------|----------------|
-| ML / 데이터 | `data-validator` (데이터 누수·shape 검증), `model-evaluator` (메트릭·재현성) |
-| 보안 중점 (금융·헬스케어 등) | `security-reviewer` (OWASP·규제 준수) |
-| IaC / 인프라 | `iac-validator` (Plan diff·비용·보안 정책) |
-| 프론트엔드 SPA | `ui-reviewer` (접근성·반응형·디자인 토큰) |
-| 모바일 | `platform-reviewer` (iOS HIG / Android Material 준수) |
+| 도메인 | 활성화 L2 agent | 활성화 신호 |
+|--------|-----------------|-------------|
+| 백엔드 API (Python/FastAPI) | `fastapi-reviewer`, `python-reviewer`, `security-reviewer` (auth 키워드) | `[STACK]=python-fastapi` |
+| 백엔드 API (일반 Python) | `python-reviewer`, `security-reviewer` (조건부) | `[STACK]=python` |
+| 백엔드 API (Java/Spring) | `java-reviewer`, `security-reviewer` (조건부) + skills: `ecc/springboot-*` | `[STACK]=java-spring` |
+| 프론트엔드 SPA | `typescript-reviewer`, `code-reviewer` + skills: `ecc/frontend-patterns`, `ecc/motion-ui`, `ecc/liquid-glass-design`, `ecc/ui-demo` | `[STACK]∈{ts-next, typescript, javascript}` |
+| 풀스택 | 위 백엔드 + 프론트 모두 (파일 경로별 분기) | `[STACK]=[backend, frontend]` 배열 |
+| 보안 중점 (금융·헬스케어) | `security-reviewer` 를 **항상** 활성 (키워드 게이트 무시) | 사용자 도메인 명시 |
 
-신규 agent 추가 시 오케스트레이터 SKILL.md의 Phase 흐름도 수정 (사용자 확인 후).
+##### 3-2-B. 도메인 특화 신규 agent (표준 L2 미커버 시만 생성)
+
+다음 도메인은 표준 L2로 커버 안 됨 → 사용자 확인 후 `.claude/agents/` 신규 생성:
+
+| 도메인 | 권장 신규 agent | 책임 |
+|--------|----------------|------|
+| ML / 데이터 | `data-validator`, `model-evaluator` | 데이터 누수·shape·메트릭·재현성 |
+| IaC / 인프라 | `iac-validator` | terraform plan diff·비용·보안 정책 |
+| 모바일 (iOS/Android) | `platform-reviewer` | iOS HIG / Android Material 준수 |
+| 게임 | `gameplay-validator` | 프레임 예산·물리·입력 처리 |
+| Go / Rust 백엔드 | `go-reviewer` / `rust-reviewer` | 언어 관용·동시성·메모리 |
+
+신규 agent 추가 시:
+1. `.claude/agents/{name}.md` 생성
+2. `harness-orchestrator/SKILL.md` Phase 3-2 라우팅 표에 행 추가
+3. `docs/rules/03-ai-agent-guidelines.md` L2 인벤토리 표에 행 추가
+4. `[STACK]` 키가 신규면 orchestrator Phase 0.5 표에도 추가
 
 ### 3-3. 보존 항목 (수정 안 함)
 
 - `docs/rules/02-development-workflow.md` (SDD 흐름은 도메인 무관)
 - `docs/rules/04~07` (변경이력·컨텍스트·브랜치·에러복구는 일반론)
-- 기본 4 agent (planner/implementer/reviewer/qa) — 도메인 무관
-  - 단, 도메인 특화 체크리스트 보강 옵션은 사용자에게 별도 제시
-- `.claude/skills/harness-orchestrator/SKILL.md` (도메인 agent 추가 시만 Phase 보강)
+- L1 4 agent (planner/implementer/reviewer/qa) 본문 — 위임/팬아웃 매트릭스는 도메인 무관
+  - 단, qa.md 의 `검증 깊이 가이드` 표는 도메인별 보강 가능 (사용자 확인 후)
+- L2 agent 본문 — 기본 정의 유지. 도메인별 활성화 신호만 03에 추가
+- ECC·superpowers·commands 인벤토리 — **수정 금지** (Net-zero)
+- `.claude/skills/harness-orchestrator/SKILL.md` 본문 — 신규 `[STACK]` 키 발견·신규 L2 추가 시에만 매핑 표 보강
+- `.claude/skills/caveman/`, `.claude/skills/harness-orchestrator/`, `.claude/skills/harness-adapt/` 본문 — 도메인 무관
 - `.specify/memory/constitution.md` (헌법은 사용자 직접 작성 — 자동 수정 금지)
 
 ---
@@ -215,9 +259,11 @@ flags:
 ### 4-4. changelog 자동 기록
 
 `docs/changelog/YYYY-MM-DD-chore-harness-adaptation.md` 생성:
-- 감지된 스택·도메인
+- 감지된 스택·도메인 + 정규화된 `[STACK]` 키
 - 수정된 파일 목록 및 요약
-- 추가된 agent (있으면)
+- 활성화한 L2 agent 목록 (기본 reviewer 팬아웃 라우팅에 포함)
+- 추가된 신규 agent (3-2-B 항목, 있으면)
+- orchestrator `[STACK]` 매핑 표 보강 여부
 
 ---
 
@@ -265,9 +311,18 @@ caveman lite 적용 **제외** (사용자 보고 중심 스킬):
 → Phase 3: 디렉토리별 스택 매핑하여 `01-project-structure.md` 작성 (`apps/web/` Next.js, `apps/api/` Go)
 
 **ML 프로젝트 흐름**:
-→ Phase 1: torch + transformers + datasets 감지
+→ Phase 1: torch + transformers + datasets 감지 → `[STACK]=python` + ML 도메인 플래그
 → Phase 2: ML 도메인 추정 → 사용자 확인 ✓
-→ Phase 3: `data-validator`, `model-evaluator` agent 추가 권장 → 사용자 승인 → `.claude/agents/`에 생성 + orchestrator Phase 흐름 보강
+→ Phase 3:
+   - 3-2-A (표준 L2 활성화): `python-reviewer`, `code-reviewer` (security-reviewer 는 키워드 게이트 적용)
+   - 3-2-B (신규 생성): `data-validator`, `model-evaluator` agent 추가 권장 → 사용자 승인 → `.claude/agents/`에 생성
+   - orchestrator Phase 3-2 라우팅 표 + Phase 0.5 [STACK] 표에 ML 분기 보강
+
+**보안 중점 도메인 (금융)**:
+→ Phase 1: Java + Spring Boot 감지 → `[STACK]=java-spring`
+→ Phase 2: "금융 백엔드 API + 규제 준수 필요" → 사용자 확인 ✓
+→ Phase 3-2-A: `java-reviewer` + ECC `springboot-security` 활성. **`security-reviewer` 는 키워드 게이트 무시하고 항상 활성** (도메인 신호 기록)
+→ Phase 4-4: changelog 에 "security-reviewer always-on" 명시
 
 **에러 흐름 (매니페스트 0개)**:
 → Phase 1: 어떤 매니페스트도 감지 안 됨

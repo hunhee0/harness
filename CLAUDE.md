@@ -90,11 +90,16 @@ options:  // 예시: 기술 선택
 - **자동 해제 조건**: `question` 툴 옵션·설명 / 변경 diff·요약 제시
 - **적용 제외**: 코드 / 커밋 메시지 / 문서(CLAUDE.md, docs/, changelog) — 정상 작성
 
-### 9. 하네스 진입점 (orchestrator + adapt)
+### 9. 하네스 진입점 (orchestrator + adapt) + 2계층 에이전트 팀
 
 - **기능 개발**: `harness-orchestrator` 스킬 자동 사용.
   트리거: "기능 만들어줘", "구현해줘", "개발 시작", "새 기능", "이어서 진행", "스펙 작성", "재실행", "업데이트", "수정", "보완"
-  파이프라인: `planner → implementer → reviewer → qa`
+  파이프라인: `planner → implementer → reviewer → qa` (Phase 0.5 스택 감지 + Phase 5 doc-updater 포함)
+  **3축 통합**: 수직 위임 (L1→L2 전문 agent) + 수평 팬아웃 (Phase 3 기본·나머지 조건부) + 통합 머지 (dedupe·severity boost·충돌 사용자 결정). 상세 `docs/rules/03-ai-agent-guidelines.md` §3축.
+
+- **에이전트 팀 구성**: L1 4개 (워크플로) + L2 11개 (전문 reviewer·architect·tdd-guide·doc-updater·loop-operator). 상세 `docs/rules/03`.
+
+- **스킬 자원**: speckit 5 · harness 3 · ECC 21 (스택 패턴·테스트) · superpowers 8 (메타 워크플로) · commands 10. `[STACK]` 기반 자동 분기.
 
 - **하네스 onboarding (1회)**: `harness-adapt` 스킬 자동 사용.
   트리거: "하네스 적용해줘", "프로젝트 분석해서 하네스 갱신", "하네스 onboarding", "기존 코드에 맞춰 하네스 수정", "하네스 init"
@@ -108,6 +113,8 @@ options:  // 예시: 기술 선택
 | 2026-05-26 | 보완 (재호출 지침, Agent 호출 형식, 에러 핸들링, caveman 경계) | orchestrator + agents + setup.sh + constitution 가이드 | 셀프 리뷰 결과 |
 | 2026-05-26 | 이식 가이드 + opencode 변환 가이드 | docs/INSTALL.md + README.md | 다른 프로젝트·다른 CLI 적용 안내 |
 | 2026-05-26 | harness-adapt 스킬 신규 (자동 onboarding) | .claude/skills/harness-adapt/ + CLAUDE.md Rule 9 + 03-ai-agent-guidelines.md | 기존 프로젝트 적용 자동화 |
+| 2026-05-28 | ECC·superpowers 스킬 + 전문 reviewer/architect/tdd-guide/doc-updater agent 통합 | .claude/skills/ecc/ (21) + .claude/skills/superpowers/ (8) + .claude/agents/ (+11) + .claude/commands/ (10) + .claude/rules/ecc/ | 스택별 패턴·메타 워크플로 자원 확보 |
+| 2026-05-28 | 3축 통합 디자인 적용 (수직 위임 + 수평 팬아웃 + 통합 머지) | harness-orchestrator + planner/implementer/reviewer/qa agent + 03-ai-agent-guidelines.md | Phase 3 다관점 리뷰·스택 자동 분기·완료 직전 게이트 |
 
 ---
 
@@ -129,16 +136,25 @@ options:  // 예시: 기술 선택
 haness/
 ├── CLAUDE.md                        # ← 여기 (하네스 루트)
 ├── .claude/
-│   ├── agents/                      # 에이전트 팀 (planner/implementer/reviewer/qa)
-│   └── skills/                      # 스킬 (harness-orchestrator 등)
+│   ├── agents/                      # 에이전트 팀 (L1 4 + L2 11 = 15개)
+│   ├── skills/
+│   │   ├── caveman/                 # 응답 토큰 압축
+│   │   ├── harness-orchestrator/    # 기능 개발 파이프라인 진입점
+│   │   ├── harness-adapt/           # 기존 프로젝트 onboarding
+│   │   ├── speckit-*/               # SDD 5개
+│   │   ├── ecc/                     # 도메인 패턴·테스트 21개
+│   │   └── superpowers/             # 메타 워크플로 8개
+│   ├── commands/                    # 슬래시 커맨드 10개
+│   ├── rules/ecc/                   # ECC 부속 규칙
+│   └── settings.json                # 훅·권한
 ├── docs/
-│   ├── rules/                       # 절대 규칙 (7개 파일)
-│   ├── specs/                        # Speckit 스펙 (기능별 디렉토리)
-│   └── changelog/                   # 변경 이력 로그
+│   ├── rules/                       # 절대 규칙 7개 파일
+│   ├── specs/                       # Speckit 스펙 (기능별)
+│   └── changelog/                   # 변경 이력
 ├── .specify/
-│   └── memory/constitution.md       # 프로젝트 원칙 (시작 시 작성)
-├── src/                             # 소스 코드
-├── tests/                           # 테스트
-├── setup.ps1                        # 하네스 이식 스크립트 (Windows)
-└── setup.sh                         # 하네스 이식 스크립트 (Mac/Linux)
+│   ├── memory/constitution.md       # 프로젝트 원칙
+│   ├── templates/, scripts/         # Speckit 자원
+├── src/, tests/                     # 실 프로젝트 적용 시 생성
+├── setup.ps1                        # Windows 이식 스크립트
+└── setup.sh                         # Mac/Linux 이식 스크립트
 ```
