@@ -52,7 +52,16 @@ options:  // 예시: 기술 선택
 
 `specify → plan → tasks → implement` 순서를 엄격히 지킵니다.
 
-**BLOCKING**: 스펙 없이 코드 작성 ❌ | 단계 건너뛰기 ❌ | plan 없이 tasks 생성 ❌
+**speckit 스킬 필수 사용** — 각 단계는 반드시 해당 speckit 스킬로 수행 (수동 대체 ❌):
+
+| 단계 | 필수 스킬 |
+|------|-----------|
+| specify | `/speckit-specify` |
+| plan | `/speckit-plan` |
+| tasks | `/speckit-tasks` |
+| implement | `/speckit-implement` |
+
+**BLOCKING**: 스펙 없이 코드 작성 ❌ | 단계 건너뛰기 ❌ | plan 없이 tasks 생성 ❌ | speckit 스킬 우회(수동 작성) ❌
 **필수**: 단계 이동 전 사용자 확인 ✅ | `tasks.md` 체크박스 추적 (`[ ]`→`[x]`) ✅
 **예외**: 1-3줄 버그 수정, 타이포, 설정 변경만 SDD 생략 가능.
 
