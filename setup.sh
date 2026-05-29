@@ -6,8 +6,8 @@
 #   ./setup.sh ../my-project --dry-run
 #   ./setup.sh ../my-project --opencode
 #     ↳ opencode 자동 변환:
-#       - .claude/agents   -> .opencode/agent     (단수 + frontmatter: name 제거, mode 추가, model→KTDS Qwen, tools 배열 라인 제거)
-#       - .claude/skills   -> .opencode/command   (의미 변환; SKILL.md -> <skill-name>.md)
+#       - .claude/agents   -> .opencode/agent     (단수 + frontmatter: name/color 제거, mode 추가, model→KTDS Qwen, tools 배열 라인 제거)
+#       - .claude/skills   -> .opencode/skills    (그대로 유지; SKILL.md 보존)
 #       - .claude/commands -> .opencode/command   (병합)
 #       - .claude/rules    -> .opencode/rule      (단수)
 #       - .claude/settings.json -> .opencode/settings.json
@@ -65,7 +65,7 @@ path_for_opencode() {
 
     # 단수형/의미 변환
     p="${p//.claude\/agents/.opencode/agent}"
-    p="${p//.claude\/skills/.opencode/command}"
+    p="${p//.claude\/skills/.opencode/skills}"
     p="${p//.claude\/commands/.opencode/command}"
     p="${p//.claude\/rules/.opencode/rule}"
     # fallback
@@ -91,7 +91,7 @@ sed_inplace_opencode() {
 
     # 우선순위 매핑 (확장 정규식 -E)
     _se 's#\.claude([\\/])agents#.opencode\1agent#g'
-    _se 's#\.claude([\\/])skills#.opencode\1command#g'
+    _se 's#\.claude([\\/])skills#.opencode\1skills#g'
     _se 's#\.claude([\\/])commands#.opencode\1command#g'
     _se 's#\.claude([\\/])rules#.opencode\1rule#g'
     # fallback
@@ -139,7 +139,7 @@ ktds_model_for() {
 }
 
 # Agent .md frontmatter 정리 (opencode 양식):
-#   - name: 라인 제거 (파일명이 식별자 역할)
+#   - name:/color: 라인 제거 (opencode 무관 필드)
 #   - mode: subagent 추가 (없으면) — description 다음 줄
 #   - tools: [..] 배열 라인 제거 (opencode 는 tools 를 record 로 기대 — 미지정 시 기본 도구 상속)
 #   - model: KTDS 모델로 매핑/삽입 (claude 모델 미지원)
@@ -168,6 +168,8 @@ convert_agent_frontmatter() {
 
         # name: 라인 제거 (frontmatter 영역 가정)
         _sed_i '/^name:[[:space:]]/d' "$f"
+        # color: 라인 제거 (opencode agent frontmatter 에 color 필드 없음)
+        _sed_i '/^color:[[:space:]]/d' "$f"
         # tools: [..] 배열 라인 제거
         _sed_i '/^tools:[[:space:]]*\[.*\]/d' "$f"
         # mode: 이미 있으면 skip, 없으면 description 다음에 추가
@@ -183,26 +185,6 @@ mode: subagent' "$f"
 model: ${model}" "$f"
         fi
     done < <(find "$agent_dir" -type f -name "*.md" -print0)
-}
-
-# SKILL.md -> <skill-name>.md rename (opencode 는 SKILL.md 개념 없음)
-rename_skill_to_command() {
-    local command_dir="$1"
-    $OPENCODE || return 0
-    [[ -d "$command_dir" ]] || return 0
-
-    local skill_file
-    while IFS= read -r -d '' skill_file; do
-        local parent_dir parent_name new_name new_path
-        parent_dir="$(dirname "$skill_file")"
-        parent_name="$(basename "$parent_dir")"
-        # 안전한 파일명 (영문/숫자/하이픈만)
-        new_name="$(echo "$parent_name" | sed 's/[^a-zA-Z0-9_-]/-/g')"
-        new_path="$parent_dir/$new_name.md"
-        if [[ ! -e "$new_path" ]]; then
-            mv "$skill_file" "$new_path"
-        fi
-    done < <(find "$command_dir" -type f -name "SKILL.md" -print0)
 }
 
 copy_dir() {
@@ -262,7 +244,7 @@ $DRY_RUN  && echo "  모드: DRY RUN"
 if $OPENCODE; then
     echo "  모드: OPENCODE"
     echo "    .claude/agents   -> .opencode/agent     (단수 + frontmatter: model→KTDS Qwen, tools 제거)"
-    echo "    .claude/skills   -> .opencode/command   (의미 변환; SKILL.md rename)"
+    echo "    .claude/skills   -> .opencode/skills    (그대로 유지; SKILL.md 보존)"
     echo "    .claude/commands -> .opencode/command   (병합)"
     echo "    .claude/rules    -> .opencode/rule"
     echo "    .claude/settings.json -> .opencode/settings.json"
@@ -281,8 +263,7 @@ copy_dir  ".claude/rules"               "ECC 부속 규칙"
 # opencode 후처리 (디렉토리 복사 직후, settings.json 복사 전)
 if $OPENCODE && ! $DRY_RUN; then
     convert_agent_frontmatter "$TARGET_DIR/.opencode/agent"
-    rename_skill_to_command   "$TARGET_DIR/.opencode/command"
-    echo "  ✓ Opencode 후처리 (agent frontmatter, SKILL.md rename)"
+    echo "  ✓ Opencode 후처리 (agent frontmatter)"
 fi
 
 copy_file ".claude/settings.json"
@@ -306,11 +287,11 @@ echo "  4. (선택) docs/rules/03-ai-agent-guidelines.md — 프로젝트별 스
 if $OPENCODE; then
     echo ""
     echo "  Opencode 모드 — 추가 수동 검토 필요:"
-    echo "    a) .opencode/command/*.md 본문의 'Agent(...)' / 'Skill(...)' 호출 표기"
+    echo "    a) .opencode/skills/ 및 command 파일 본문의 'Agent(...)' / 'Skill(...)' 호출 표기"
     echo "       사내 fork의 '@agent-name' / '/command-name' 양식으로 교체"
     echo "    b) .opencode/settings.json 의 훅 키 (UserPromptSubmit 등) — opencode 이벤트명으로 마이그레이션"
     echo "    c) primary agent 지정: 기본은 모두 subagent. 한 agent의 frontmatter 를 mode: primary 로 변경"
-    echo "    d) .opencode/command/<skill>/ 의 nested 구조 + 보조 파일 (scripts/) — 사내 fork 지원 여부 확인"
+    echo "    d) .opencode/skills/<skill>/ 의 nested 구조 (SKILL.md 보존) + 보조 파일 (scripts/) — 사내 fork 지원 여부 확인"
     echo "    e) .opencode/rule/ 디렉토리명 — 사내 fork 의 rules 디렉토리 규약 확인"
     echo "    f) agent 'model:' 이 KTDS Qwen 으로 매핑됨 ([KTDS] Qwen3.6-27B-FP8 메인 / -35B-A3B-FP8 서브) — opencode provider 가 기대하는 model id 형식 확인"
 fi
