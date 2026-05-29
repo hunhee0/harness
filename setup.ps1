@@ -5,7 +5,7 @@
 #   .\setup.ps1 -TargetDir "../my-project" -DryRun
 #   .\setup.ps1 -TargetDir "../my-project" -Opencode
 #     ↳ Full opencode adaptation:
-#       - .claude/agents   -> .opencode/agent   (singular + frontmatter: drop name, add mode: subagent, map model->KTDS Qwen, tools array -> yaml list)
+#       - .claude/agents   -> .opencode/agent   (singular + frontmatter: drop name, add mode: subagent, map model->KTDS Qwen, drop tools array line)
 #       - .claude/skills   -> .opencode/command (semantic; SKILL.md -> <skill-name>.md)
 #       - .claude/commands -> .opencode/command (merged)
 #       - .claude/rules    -> .opencode/rule    (singular)
@@ -113,7 +113,7 @@ function Convert-AgentFrontmatter {
     #   - remove `name:` line (filename takes over in opencode)
     #   - add `mode: subagent` after `description:` if missing
     #   - map `model:` to a KTDS Qwen model per $AgentModelMap (insert if absent)
-    #   - convert inline `tools: [..]` array to a lowercase YAML block list
+    #   - remove the inline `tools: [..]` array line (opencode wants a record, not an array)
     param([string]$AgentDir)
     if (-not $Opencode -or -not (Test-Path $AgentDir)) { return }
 
@@ -156,16 +156,12 @@ function Convert-AgentFrontmatter {
             $modified = $true
         }
 
-        # Convert inline `tools: [..]` array to a lowercase YAML block list
-        if ($content -match '(?m)^tools:[ \t]*\[(.*?)\]') {
-            $items = $matches[1] -split ',' |
-                ForEach-Object { $_.Trim().Trim('"').Trim("'").Trim().ToLower() } |
-                Where-Object { $_ -ne '' }
-            if ($items.Count -gt 0) {
-                $list = ($items | ForEach-Object { "  - $_" }) -join "`r`n"
-                $content = $content -replace '(?m)^tools:[ \t]*\[.*?\]', "tools:`r`n$list"
-                $modified = $true
-            }
+        # Remove the inline `tools: [..]` array line entirely. opencode expects
+        # `tools` as a record (e.g. `read: true`), not an array; dropping the line
+        # lets the agent inherit the default toolset.
+        if ($content -match '(?m)^tools:[ \t]*\[.*?\]\r?\n') {
+            $content = $content -replace '(?m)^tools:[ \t]*\[.*?\]\r?\n', ''
+            $modified = $true
         }
 
         if ($modified) {
@@ -220,7 +216,7 @@ Write-Host "  Target: $TargetDir"
 if ($DryRun)   { Write-Host "  Mode: DRY RUN (no actual copy)" -ForegroundColor Yellow }
 if ($Opencode) {
     Write-Host "  Mode: OPENCODE" -ForegroundColor Cyan
-    Write-Host "    .claude/agents   -> .opencode/agent     (singular + frontmatter: model->KTDS Qwen, tools->yaml list)" -ForegroundColor Cyan
+    Write-Host "    .claude/agents   -> .opencode/agent     (singular + frontmatter: model->KTDS Qwen, drop tools line)" -ForegroundColor Cyan
     Write-Host "    .claude/skills   -> .opencode/command   (semantic; SKILL.md renamed)" -ForegroundColor Cyan
     Write-Host "    .claude/commands -> .opencode/command   (merged)" -ForegroundColor Cyan
     Write-Host "    .claude/rules    -> .opencode/rule" -ForegroundColor Cyan
