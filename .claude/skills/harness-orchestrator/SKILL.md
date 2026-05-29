@@ -91,30 +91,40 @@ Agent(
 
 ---
 
-## Phase 1: 기능 명세 (Planner)
+## Phase 1: 기능 명세 (SDD — 게이트는 오케스트레이터 메인 컨텍스트가 소유)
 
-`planner` 에이전트 호출:
+**원칙**: speckit 순서 `specify → plan → tasks → implement` 절대 준수.
+spec/plan/tasks 3개 사용자 확인 게이트는 **오케스트레이터 메인 컨텍스트**에서 수행한다.
 
-```
-[GOAL] 기능 설명을 spec.md → plan.md → tasks.md 로 변환
-[INPUT] 사용자가 요청한 기능 설명 + .specify/memory/constitution.md + [STACK]
-[OUTPUT] docs/specs/{feature}/tasks.md 완성
-[CONSTRAINT]
-  - constitution.md 먼저 읽을 것 (있을 경우)
-  - 각 단계 완료 후 사용자 확인 필수
-  - 스펙 없이 tasks 생성 금지
-  - planner.md 의 위임/팬아웃 매트릭스 준수
-[IN-SCOPE] specify, plan, tasks 생성
-[OUT-SCOPE] 코드 작성, 파일 수정
-```
+- 서브에이전트(Agent 도구)는 대화형 사용자 확인 불가 → 게이트를 에이전트 안에 두지 말 것
+- `/speckit-specify`는 내부 [NEEDS CLARIFICATION] 사용자 질의 때문에 **반드시 메인 컨텍스트에서 직접 실행**
+- 각 게이트는 `AskUserQuestion`으로 제시 (예: "승인 — 다음 단계" / "수정 요청 — 어디를" / "중단"). **승인 없이 다음 단계 진입 금지.**
 
-**팬아웃 옵션 (조건부)**: 팬아웃 트리거 표 충족 시 planner는 같은 메시지에서 architect ×2 + code-architect 병렬 호출 후 trade-off 표로 통합. 상세는 `agents/planner.md`.
+### Phase 1a — 명세 (specify)
 
-planner가 tasks.md 완성 → 사용자 확인 → Phase 2.
+1. `.specify/memory/constitution.md` 읽기 (있을 경우)
+2. 메인 컨텍스트에서 `/speckit-specify` 실행 → `docs/specs/{feature}/spec.md`
+3. (요구사항 모호 시) planner 위임 매트릭스의 `superpowers/brainstorming` 참조
+4. 🚦 **GATE 1**: spec.md 요약 제시 → 사용자 확인 → 승인 시 Phase 1b
+
+### Phase 1b — 계획 (plan)
+
+1. 메인 컨텍스트에서 `/speckit-plan` 실행 → `docs/specs/{feature}/plan.md`
+2. (팬아웃 트리거 충족 시) planner가 같은 메시지에서 architect ×2 + code-architect 병렬 호출 후 trade-off 표로 통합. 상세는 `agents/planner.md`.
+3. 🚦 **GATE 2**: plan.md 요약 제시 → 사용자 확인 → 승인 시 Phase 1c
+
+### Phase 1c — 태스크 (tasks)
+
+1. 메인 컨텍스트에서 `/speckit-tasks` 실행 → `docs/specs/{feature}/tasks.md`
+2. 🚦 **GATE 3 (BLOCKING · 필수)**: tasks.md 요약 제시 → 사용자 확인.
+   **이 승인 없이는 Phase 2 구현 절대 진입 금지.** → 승인 시에만 Phase 2.
 
 ---
 
-## Phase 2: 구현 (Implementer)
+## Phase 2: 구현 (Implementer — /speckit-implement)
+
+**전제 (BLOCKING)**: Phase 1c GATE 3 (tasks.md 사용자 승인) 통과 필수. 미승인 시 진입 금지.
+**메커니즘**: 구현은 `/speckit-implement`로 수행 (tasks.md `[ ]` 단계별 실행·`[X]` 갱신). implementer가 이 명령을 실행하고 TDD·Verification Loop를 적용.
 
 `implementer` 에이전트 호출:
 
@@ -128,6 +138,7 @@ planner가 tasks.md 완성 → 사용자 확인 → Phase 2.
   - 요청 범위 외 코드 수정 금지
   - 이미 [x]인 태스크 재구현 금지 (사용자 명시 요청 시 예외)
   - implementer.md 의 스택별 skill 표 + 메타 skill 호출 조건 준수
+  - /speckit-implement 로 tasks.md 실행 (단계별·TDD 순서)
 ```
 
 **스킬 참조 (자동)**: [STACK] 기반으로 implementer가 `ecc/{stack}-patterns`, `ecc/{stack}-testing` 또는 `superpowers/test-driven-development` 참조. 구현 막힘 시 `superpowers/systematic-debugging`. 완료 직전 `superpowers/verification-before-completion` 체크리스트 적용. 상세는 `agents/implementer.md`.
@@ -264,8 +275,10 @@ Agent(
 "사용자 로그인 기능 만들어줘"
 → Phase 0: `docs/specs/` 없음 → 신규
 → Phase 0.5: `pyproject.toml` + FastAPI 임포트 → `[STACK]=python-fastapi`
-→ Phase 1: planner (spec/plan/tasks 생성, ecc/api-design·ecc/tdd-workflow 참조) → 사용자 확인
-→ Phase 2: implementer (ecc/fastapi-patterns·ecc/python-testing 참조, TDD)
+→ Phase 1a: /speckit-specify → spec.md → 🚦 GATE 1 (사용자 확인)
+→ Phase 1b: /speckit-plan → plan.md → 🚦 GATE 2 (사용자 확인)
+→ Phase 1c: /speckit-tasks → tasks.md → 🚦 GATE 3 BLOCKING (사용자 확인)
+→ Phase 2: implementer가 /speckit-implement 실행 (ecc/fastapi-patterns·ecc/python-testing 참조, TDD)
 → Phase 3-1: reviewer (스펙 준수 검증, 통과)
 → Phase 3-2: 팬아웃 3개 병렬 — fastapi-reviewer + security-reviewer (auth 키워드) + code-reviewer
 → Phase 3-3: reviewer 통합 (dedupe → 통과)

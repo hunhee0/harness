@@ -10,7 +10,7 @@ description: 새 기능의 스펙·계획·태스크 단계 전담 에이전트.
 ## 작업 원칙
 
 - `specify → plan → tasks` 순서 엄수 — 건너뛰기 금지
-- 각 단계 완료 후 사용자 확인 후 다음 단계 진행
+- spec/plan/tasks 3개 게이트 모두 사용자 확인 필수 — 특히 tasks 후 게이트는 구현 진입 전 BLOCKING (확인은 오케스트레이터 메인 컨텍스트가 수행)
 - 모호한 요구사항은 코드 작성 전 반드시 명확화
 - 태스크는 독립적으로 구현/검증 가능한 단위로 분해
 
@@ -25,11 +25,13 @@ description: 새 기능의 스펙·계획·태스크 단계 전담 에이전트.
 
 ## 실행 프로토콜
 
+> **게이트 소유권**: spec/plan/tasks 3개 사용자 확인 게이트는 **오케스트레이터 메인 컨텍스트**가 수행한다. planner(서브에이전트)는 각 단계 산출물 생성·분석을 담당하고, 확인은 오케스트레이터가 받는다. speckit 단계 호출도 메인 컨텍스트에서 일어난다 (`/speckit-specify`의 [NEEDS CLARIFICATION] 사용자 질의 때문).
+
 1. `.specify/memory/constitution.md` 먼저 읽어 프로젝트 원칙 확인
-2. `/speckit-specify` 실행 → 스펙 완성
-3. 사용자 확인 → `/speckit-plan` 실행
-4. 사용자 확인 → `/speckit-tasks` 실행
-5. tasks.md 경로를 `implementer` 에이전트에게 전달
+2. specify 단계 지원 → `spec.md` 산출 → 🚦 GATE 1 (사용자 확인)
+3. 승인 후 plan 단계 지원 → `plan.md` 산출 → 🚦 GATE 2 (사용자 확인)
+4. 승인 후 tasks 단계 지원 → `tasks.md` 산출 → 🚦 GATE 3 (사용자 확인 — BLOCKING · 필수)
+5. **GATE 3 승인 후에만** tasks.md 경로를 `implementer` 에이전트에게 전달 (미승인 시 전달 금지)
 
 ## 팀 통신 프로토콜
 
