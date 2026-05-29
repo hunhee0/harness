@@ -22,6 +22,9 @@ description: tasks.md 기반 코드 구현 에이전트. TDD 준수, Verificatio
 
 ## 실행 프로토콜
 
+> **전제 (BLOCKING)**: tasks.md 에 대한 사용자 승인(오케스트레이터 GATE 3) 통과 후에만 착수. 미승인 tasks.md로 구현 금지.
+> **메커니즘**: 구현은 `/speckit-implement`로 수행 (tasks.md 단계별 실행·`[X]` 갱신). 아래 1~7은 그 안에서 적용하는 TDD·검증 원칙.
+
 1. `spec.md`에서 성공 기준 확인
 2. `tasks.md` 읽기 → 미완료(`[ ]`) 태스크 파악
 3. 첫 태스크: 테스트 먼저 작성 (RED)
