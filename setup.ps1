@@ -5,11 +5,11 @@
 #   .\setup.ps1 -TargetDir "../my-project" -DryRun
 #   .\setup.ps1 -TargetDir "../my-project" -Opencode
 #     ↳ Full opencode adaptation:
-#       - .claude/agents   -> .opencode/agent   (singular + frontmatter cleanup: drop name, add mode: subagent)
+#       - .claude/agents   -> .opencode/agent   (singular + frontmatter: drop name, add mode: subagent, map model->KTDS Qwen, tools array -> yaml list)
 #       - .claude/skills   -> .opencode/command (semantic; SKILL.md -> <skill-name>.md)
 #       - .claude/commands -> .opencode/command (merged)
 #       - .claude/rules    -> .opencode/rule    (singular)
-#       - .claude/settings.json -> ./opencode.json (project root; _note key added — hook schema needs manual review)
+#       - .claude/settings.json -> .opencode/settings.json
 #       - Content references rewritten with same path mapping
 #       - Skill/Agent tool call sites in markdown bodies require manual review (not auto-converted)
 
@@ -37,8 +37,8 @@ function Convert-PathForOpencode {
     if (-not $Opencode) { return $Path }
 
     $mapped = $Path
-    # settings.json -> opencode.json (project root, NOT under .opencode/)
-    $mapped = $mapped -replace '\.claude[\\/]+settings\.json', 'opencode.json'
+    # settings.json -> .opencode/settings.json
+    $mapped = $mapped -replace '\.claude[\\/]+settings\.json', '.opencode\settings.json'
     # agents -> agent (singular)
     $mapped = $mapped -replace '\.claude[\\/]+agents', '.opencode\agent'
     # skills -> command (semantic mapping)
@@ -84,10 +84,36 @@ function Convert-ContentForOpencode {
     }
 }
 
+# Agent -> KTDS model map for opencode (Claude models unavailable in this fork).
+#   Main [KTDS] Qwen3.6-27B-FP8     : dense 27B - deep reasoning/generation
+#                                     (architecture, security, TDD strategy, L1 workflow agents).
+#   Sub  [KTDS] Qwen3.6-35B-A3B-FP8 : MoE active 3B - fast/light
+#                                     (pattern-based language reviewers, loop monitoring, docs).
+# Values are pre-quoted so the leading "[" stays a YAML string, not a flow sequence.
+$AgentModelMap = @{
+    'architect'           = '"[KTDS] Qwen3.6-27B-FP8"'
+    'code-architect'      = '"[KTDS] Qwen3.6-27B-FP8"'
+    'security-reviewer'   = '"[KTDS] Qwen3.6-27B-FP8"'
+    'tdd-guide'           = '"[KTDS] Qwen3.6-27B-FP8"'
+    'planner'             = '"[KTDS] Qwen3.6-27B-FP8"'
+    'implementer'         = '"[KTDS] Qwen3.6-27B-FP8"'
+    'reviewer'            = '"[KTDS] Qwen3.6-27B-FP8"'
+    'qa'                  = '"[KTDS] Qwen3.6-27B-FP8"'
+    'code-reviewer'       = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'python-reviewer'     = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'java-reviewer'       = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'typescript-reviewer' = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'fastapi-reviewer'    = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'loop-operator'       = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'doc-updater'         = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+}
+
 function Convert-AgentFrontmatter {
     # Cleanup agent .md frontmatter for opencode:
     #   - remove `name:` line (filename takes over in opencode)
     #   - add `mode: subagent` after `description:` if missing
+    #   - map `model:` to a KTDS Qwen model per $AgentModelMap (insert if absent)
+    #   - convert inline `tools: [..]` array to a lowercase YAML block list
     param([string]$AgentDir)
     if (-not $Opencode -or -not (Test-Path $AgentDir)) { return }
 
@@ -110,6 +136,34 @@ function Convert-AgentFrontmatter {
         if ($content -notmatch '(?m)^mode:\s*\S') {
             if ($content -match '(?m)^description:[^\r\n]+\r?\n') {
                 $content = $content -replace '(?m)^(description:[^\r\n]+\r?\n)', "`$1mode: subagent`r`n"
+                $modified = $true
+            }
+        }
+
+        # Resolve target KTDS model (default to main 27B if filename unmapped)
+        $targetModel = $AgentModelMap[$_.BaseName]
+        if (-not $targetModel) { $targetModel = '"[KTDS] Qwen3.6-27B-FP8"' }
+
+        # Map existing `model:` line, else insert after `mode: subagent` (or description)
+        if ($content -match '(?m)^model:\s*\S') {
+            $content = $content -replace '(?m)^model:[^\r\n]*', "model: $targetModel"
+            $modified = $true
+        } elseif ($content -match '(?m)^mode:\s*subagent\r?\n') {
+            $content = $content -replace '(?m)^(mode:\s*subagent\r?\n)', "`$1model: $targetModel`r`n"
+            $modified = $true
+        } elseif ($content -match '(?m)^description:[^\r\n]+\r?\n') {
+            $content = $content -replace '(?m)^(description:[^\r\n]+\r?\n)', "`$1model: $targetModel`r`n"
+            $modified = $true
+        }
+
+        # Convert inline `tools: [..]` array to a lowercase YAML block list
+        if ($content -match '(?m)^tools:[ \t]*\[(.*?)\]') {
+            $items = $matches[1] -split ',' |
+                ForEach-Object { $_.Trim().Trim('"').Trim("'").Trim().ToLower() } |
+                Where-Object { $_ -ne '' }
+            if ($items.Count -gt 0) {
+                $list = ($items | ForEach-Object { "  - $_" }) -join "`r`n"
+                $content = $content -replace '(?m)^tools:[ \t]*\[.*?\]', "tools:`r`n$list"
                 $modified = $true
             }
         }
@@ -166,11 +220,11 @@ Write-Host "  Target: $TargetDir"
 if ($DryRun)   { Write-Host "  Mode: DRY RUN (no actual copy)" -ForegroundColor Yellow }
 if ($Opencode) {
     Write-Host "  Mode: OPENCODE" -ForegroundColor Cyan
-    Write-Host "    .claude/agents   -> .opencode/agent     (singular + frontmatter cleanup)" -ForegroundColor Cyan
+    Write-Host "    .claude/agents   -> .opencode/agent     (singular + frontmatter: model->KTDS Qwen, tools->yaml list)" -ForegroundColor Cyan
     Write-Host "    .claude/skills   -> .opencode/command   (semantic; SKILL.md renamed)" -ForegroundColor Cyan
     Write-Host "    .claude/commands -> .opencode/command   (merged)" -ForegroundColor Cyan
     Write-Host "    .claude/rules    -> .opencode/rule" -ForegroundColor Cyan
-    Write-Host "    .claude/settings.json -> ./opencode.json (root, _note added)" -ForegroundColor Cyan
+    Write-Host "    .claude/settings.json -> .opencode/settings.json" -ForegroundColor Cyan
 }
 Write-Host ""
 
@@ -203,12 +257,12 @@ if ($Opencode -and -not $DryRun) {
     Write-Host "  [OK] Opencode post-process (agent frontmatter, SKILL.md rename)" -ForegroundColor Green
 }
 
-# settings.json -> .claude/settings.json (default) OR opencode.json at root (-Opencode)
+# settings.json -> .claude/settings.json (default) OR .opencode/settings.json (-Opencode)
 $settingsSrc = Join-Path $SourceDir ".claude\settings.json"
 if (Test-Path $settingsSrc) {
     if ($Opencode) {
-        $settingsDest    = Join-Path $TargetDir "opencode.json"
-        $settingsDestRel = "opencode.json"
+        $settingsDest    = Join-Path $TargetDir ".opencode\settings.json"
+        $settingsDestRel = ".opencode\settings.json"
     } else {
         $settingsDest    = Join-Path $TargetDir ".claude\settings.json"
         $settingsDestRel = ".claude\settings.json"
@@ -220,15 +274,6 @@ if (Test-Path $settingsSrc) {
         New-Item -ItemType Directory -Force -Path (Split-Path $settingsDest) | Out-Null
         Copy-Item $settingsSrc $settingsDest -Force
         Convert-ContentForOpencode $settingsDest
-
-        if ($Opencode) {
-            # Insert _note key to flag manual hook schema review
-            $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-            $json = [System.IO.File]::ReadAllText($settingsDest, [System.Text.Encoding]::UTF8)
-            $note = '"_note": "Converted from .claude/settings.json by setup.ps1 -Opencode. Hook keys (UserPromptSubmit, PreToolUse, etc.) may need migration to opencode event names (user_prompt_submit, pre_tool_use, ...). Verify per your opencode fork docs.",'
-            $json = $json -replace '(?s)^\s*\{', "{`r`n  $note"
-            [System.IO.File]::WriteAllText($settingsDest, $json, $utf8NoBom)
-        }
 
         Write-Host "  [OK] settings ($settingsDestRel)" -ForegroundColor Green
     }
@@ -302,9 +347,10 @@ if ($Opencode) {
     Write-Host "  Opencode mode — additional manual review required:" -ForegroundColor Cyan
     Write-Host "    a) Skill bodies in .opencode/command/*.md still reference 'Agent(...)' / 'Skill(...)' tool calls." -ForegroundColor Cyan
     Write-Host "       Replace with opencode '@agent-name' / '/command-name' per your fork." -ForegroundColor Cyan
-    Write-Host "    b) opencode.json has hook keys (UserPromptSubmit, etc.) — migrate to opencode event names." -ForegroundColor Cyan
+    Write-Host "    b) .opencode/settings.json has hook keys (UserPromptSubmit, etc.) — migrate to opencode event names." -ForegroundColor Cyan
     Write-Host "    c) Decide which agent should be 'mode: primary' (default: all subagent). Update one frontmatter." -ForegroundColor Cyan
     Write-Host "    d) Verify .opencode/command/<skill>/ nested structure with companion files (scripts/) is supported by your fork." -ForegroundColor Cyan
     Write-Host "    e) Check .opencode/rule/ vs your fork's expected rules directory name." -ForegroundColor Cyan
+    Write-Host "    f) Agent 'model:' mapped to KTDS Qwen ([KTDS] Qwen3.6-27B-FP8 main / -35B-A3B-FP8 sub) — confirm the model id format your opencode provider expects." -ForegroundColor Cyan
 }
 Write-Host ""
