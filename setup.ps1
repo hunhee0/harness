@@ -5,7 +5,7 @@
 #   .\setup.ps1 -TargetDir "../my-project" -DryRun
 #   .\setup.ps1 -TargetDir "../my-project" -Opencode
 #     ↳ Full opencode adaptation:
-#       - .claude/agents   -> .opencode/agent   (singular + frontmatter cleanup: drop name, add mode: subagent)
+#       - .claude/agents   -> .opencode/agent   (singular + frontmatter: drop name, add mode: subagent, map model->KTDS Qwen, tools array -> yaml list)
 #       - .claude/skills   -> .opencode/command (semantic; SKILL.md -> <skill-name>.md)
 #       - .claude/commands -> .opencode/command (merged)
 #       - .claude/rules    -> .opencode/rule    (singular)
@@ -84,10 +84,36 @@ function Convert-ContentForOpencode {
     }
 }
 
+# Agent -> KTDS model map for opencode (Claude models unavailable in this fork).
+#   Main [KTDS] Qwen3.6-27B-FP8     : dense 27B - deep reasoning/generation
+#                                     (architecture, security, TDD strategy, L1 workflow agents).
+#   Sub  [KTDS] Qwen3.6-35B-A3B-FP8 : MoE active 3B - fast/light
+#                                     (pattern-based language reviewers, loop monitoring, docs).
+# Values are pre-quoted so the leading "[" stays a YAML string, not a flow sequence.
+$AgentModelMap = @{
+    'architect'           = '"[KTDS] Qwen3.6-27B-FP8"'
+    'code-architect'      = '"[KTDS] Qwen3.6-27B-FP8"'
+    'security-reviewer'   = '"[KTDS] Qwen3.6-27B-FP8"'
+    'tdd-guide'           = '"[KTDS] Qwen3.6-27B-FP8"'
+    'planner'             = '"[KTDS] Qwen3.6-27B-FP8"'
+    'implementer'         = '"[KTDS] Qwen3.6-27B-FP8"'
+    'reviewer'            = '"[KTDS] Qwen3.6-27B-FP8"'
+    'qa'                  = '"[KTDS] Qwen3.6-27B-FP8"'
+    'code-reviewer'       = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'python-reviewer'     = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'java-reviewer'       = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'typescript-reviewer' = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'fastapi-reviewer'    = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'loop-operator'       = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'doc-updater'         = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+}
+
 function Convert-AgentFrontmatter {
     # Cleanup agent .md frontmatter for opencode:
     #   - remove `name:` line (filename takes over in opencode)
     #   - add `mode: subagent` after `description:` if missing
+    #   - map `model:` to a KTDS Qwen model per $AgentModelMap (insert if absent)
+    #   - convert inline `tools: [..]` array to a lowercase YAML block list
     param([string]$AgentDir)
     if (-not $Opencode -or -not (Test-Path $AgentDir)) { return }
 
@@ -110,6 +136,34 @@ function Convert-AgentFrontmatter {
         if ($content -notmatch '(?m)^mode:\s*\S') {
             if ($content -match '(?m)^description:[^\r\n]+\r?\n') {
                 $content = $content -replace '(?m)^(description:[^\r\n]+\r?\n)', "`$1mode: subagent`r`n"
+                $modified = $true
+            }
+        }
+
+        # Resolve target KTDS model (default to main 27B if filename unmapped)
+        $targetModel = $AgentModelMap[$_.BaseName]
+        if (-not $targetModel) { $targetModel = '"[KTDS] Qwen3.6-27B-FP8"' }
+
+        # Map existing `model:` line, else insert after `mode: subagent` (or description)
+        if ($content -match '(?m)^model:\s*\S') {
+            $content = $content -replace '(?m)^model:[^\r\n]*', "model: $targetModel"
+            $modified = $true
+        } elseif ($content -match '(?m)^mode:\s*subagent\r?\n') {
+            $content = $content -replace '(?m)^(mode:\s*subagent\r?\n)', "`$1model: $targetModel`r`n"
+            $modified = $true
+        } elseif ($content -match '(?m)^description:[^\r\n]+\r?\n') {
+            $content = $content -replace '(?m)^(description:[^\r\n]+\r?\n)', "`$1model: $targetModel`r`n"
+            $modified = $true
+        }
+
+        # Convert inline `tools: [..]` array to a lowercase YAML block list
+        if ($content -match '(?m)^tools:[ \t]*\[(.*?)\]') {
+            $items = $matches[1] -split ',' |
+                ForEach-Object { $_.Trim().Trim('"').Trim("'").Trim().ToLower() } |
+                Where-Object { $_ -ne '' }
+            if ($items.Count -gt 0) {
+                $list = ($items | ForEach-Object { "  - $_" }) -join "`r`n"
+                $content = $content -replace '(?m)^tools:[ \t]*\[.*?\]', "tools:`r`n$list"
                 $modified = $true
             }
         }
@@ -166,7 +220,7 @@ Write-Host "  Target: $TargetDir"
 if ($DryRun)   { Write-Host "  Mode: DRY RUN (no actual copy)" -ForegroundColor Yellow }
 if ($Opencode) {
     Write-Host "  Mode: OPENCODE" -ForegroundColor Cyan
-    Write-Host "    .claude/agents   -> .opencode/agent     (singular + frontmatter cleanup)" -ForegroundColor Cyan
+    Write-Host "    .claude/agents   -> .opencode/agent     (singular + frontmatter: model->KTDS Qwen, tools->yaml list)" -ForegroundColor Cyan
     Write-Host "    .claude/skills   -> .opencode/command   (semantic; SKILL.md renamed)" -ForegroundColor Cyan
     Write-Host "    .claude/commands -> .opencode/command   (merged)" -ForegroundColor Cyan
     Write-Host "    .claude/rules    -> .opencode/rule" -ForegroundColor Cyan
@@ -297,5 +351,6 @@ if ($Opencode) {
     Write-Host "    c) Decide which agent should be 'mode: primary' (default: all subagent). Update one frontmatter." -ForegroundColor Cyan
     Write-Host "    d) Verify .opencode/command/<skill>/ nested structure with companion files (scripts/) is supported by your fork." -ForegroundColor Cyan
     Write-Host "    e) Check .opencode/rule/ vs your fork's expected rules directory name." -ForegroundColor Cyan
+    Write-Host "    f) Agent 'model:' mapped to KTDS Qwen ([KTDS] Qwen3.6-27B-FP8 main / -35B-A3B-FP8 sub) — confirm the model id format your opencode provider expects." -ForegroundColor Cyan
 }
 Write-Host ""
