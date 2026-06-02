@@ -113,18 +113,7 @@ options:  // 예시: 기술 선택
 - **하네스 onboarding (1회)**: `harness-adapt` 스킬 자동 사용.
   트리거: "하네스 적용해줘", "프로젝트 분석해서 하네스 갱신", "하네스 onboarding", "기존 코드에 맞춰 하네스 수정", "하네스 init"
   setup으로 파일 복사 직후 새 세션에서 호출. 코드 분석 → CLAUDE.md / 01-project-structure.md / 03-ai-agent-guidelines.md 자동 수정.
-
-**하네스 변경 이력** (Phase 5-4 권장 형식):
-
-| 날짜 | 변경 | 대상 | 사유 |
-|------|------|------|------|
-| 2026-05-26 | 초기 하네스 구성 | agents 4개 + harness-orchestrator + rules 06/07 + setup 스크립트 | 다중 프로젝트 적용 기반 |
-| 2026-05-26 | 보완 (재호출 지침, Agent 호출 형식, 에러 핸들링, caveman 경계) | orchestrator + agents + setup.sh + constitution 가이드 | 셀프 리뷰 결과 |
-| 2026-05-26 | 이식 가이드 + opencode 변환 가이드 | docs/INSTALL.md + README.md | 다른 프로젝트·다른 CLI 적용 안내 |
-| 2026-05-26 | harness-adapt 스킬 신규 (자동 onboarding) | .claude/skills/harness-adapt/ + CLAUDE.md Rule 9 + 03-ai-agent-guidelines.md | 기존 프로젝트 적용 자동화 |
-| 2026-05-28 | ECC·superpowers 스킬 + 전문 reviewer/architect/tdd-guide/doc-updater agent 통합 | .claude/skills/ecc/ (21) + .claude/skills/superpowers/ (8) + .claude/agents/ (+11) + .claude/commands/ (10) + .claude/rules/ecc/ | 스택별 패턴·메타 워크플로 자원 확보 |
-| 2026-05-28 | 3축 통합 디자인 적용 (수직 위임 + 수평 팬아웃 + 통합 머지) | harness-orchestrator + planner/implementer/reviewer/qa agent + 03-ai-agent-guidelines.md | Phase 3 다관점 리뷰·스택 자동 분기·완료 직전 게이트 |
-
+  
 ---
 
 ## 🧭 빠른 안내
