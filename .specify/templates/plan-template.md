@@ -1,7 +1,7 @@
 # 구현 계획: [기능 이름]
 
 **브랜치**: `[###-기능-이름]` | **작성일**: [날짜] | **명세**: [링크]
-**입력**: `docs/spec/[###-기능-이름]/spec.md` 에서 가져온 기능 명세
+**입력**: `docs/specs/[###-기능-이름]/spec.md` 에서 가져온 기능 명세
 
 **참고**: 이 템플릿은 `/speckit-plan` 명령에 의해 채워집니다.
 
@@ -32,7 +32,7 @@
 ### 문서화 (이 기능)
 
 ```text
-docs/spec/[###-기능]/
+docs/specs/[###-기능]/
 ├── spec.md              # 기능 명세 (/speckit-specify 명령 출력)
 ├── plan.md              # 이 파일 (/speckit-plan 명령 출력)
 ├── research.md          # Phase 0 출력 (/speckit-plan 명령)
