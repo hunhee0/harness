@@ -92,7 +92,7 @@ options:  // 예시: 기술 선택
 
 응답 토큰 절감을 위해 **caveman lite** 모드 항시 적용. `.claude/settings.json`의 UserPromptSubmit hook이 매 턴 리마인더를 context에 주입합니다. 상세 규칙은 **`.claude/skills/caveman/SKILL.md`** 참조 (Persistence / Rules / Intensity / Auto-Clarity / Boundaries).
 
-**기본 intensity**: `lite` (한국어 가독성 우선). `full`/`ultra`는 사용자가 `/caveman full|ultra` 로 명시 전환 시에만.
+**기본 intensity**: `lite` (한국어 가독성 우선). `full`/`ultra`는 `/caveman full|ultra` 전환 시 세션 대화 수준에서 적용 — 단 UserPromptSubmit 훅의 리마인더 텍스트는 정적 `[CAVEMAN LITE]`로 고정(전환해도 훅 메시지는 불변).
 
 **한국어/프로젝트 보강** (SKILL.md 위에 덮어쓰기):
 - **한국어 가독성 손상 위험 시 자동 일반 스타일** — 조사/어미가 의미를 결정하는 복잡 문장은 과도한 압축 금지
@@ -128,31 +128,5 @@ options:  // 예시: 기술 선택
 | 브랜치/PR | `docs/rules/06-branch-strategy.md` |
 | 에러 복구 | `docs/rules/07-error-recovery.md` |
 
-## 📂 프로젝트 구조 개요
-
-```
-haness/
-├── CLAUDE.md                        # ← 여기 (하네스 루트)
-├── .claude/
-│   ├── agents/                      # 에이전트 팀 (L1 4 + L2 11 = 15개)
-│   ├── skills/
-│   │   ├── caveman/                 # 응답 토큰 압축
-│   │   ├── harness-orchestrator/    # 기능 개발 파이프라인 진입점
-│   │   ├── harness-adapt/           # 기존 프로젝트 onboarding
-│   │   ├── speckit-*/               # SDD 5개
-│   │   ├── ecc/                     # 도메인 패턴·테스트 21개
-│   │   └── superpowers/             # 메타 워크플로 8개
-│   ├── commands/                    # 슬래시 커맨드 10개
-│   ├── rules/ecc/                   # ECC 부속 규칙
-│   └── settings.json                # 훅·권한
-├── docs/
-│   ├── rules/                       # 절대 규칙 7개 파일
-│   ├── specs/                       # Speckit 스펙 (기능별)
-│   └── changelog/                   # 변경 이력
-├── .specify/
-│   ├── memory/constitution.md       # 프로젝트 원칙
-│   ├── templates/, scripts/         # Speckit 자원
-├── src/, tests/                     # 실 프로젝트 적용 시 생성
-├── setup.ps1                        # Windows 이식 스크립트
-└── setup.sh                         # Mac/Linux 이식 스크립트
-```
+## 📂 프로젝트 구조
+전체 디렉토리 트리는 `README.md` · `docs/rules/01-project-structure.md` 참조 (루트 always-on 부담을 줄이려 여기선 생략 — Progressive Disclosure).
