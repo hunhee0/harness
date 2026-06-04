@@ -1,4 +1,4 @@
-# setup.ps1 - Apply harness to a new project
+﻿# setup.ps1 - Apply harness to a new project
 #
 # Usage:
 #   .\setup.ps1 -TargetDir "C:\path\to\project"
@@ -20,6 +20,14 @@ param(
     [switch]$DryRun,
     [switch]$Opencode
 )
+
+# PS 5.1 콘솔 출력 인코딩을 UTF-8 로 고정 (한글 mojibake 방지).
+# 이 스크립트는 UTF-8 (BOM) 으로 저장되어야 하며, 한글 메시지·치환 텍스트가
+# 시스템 로케일(CP949 등)로 잘못 출력/기록되지 않도록 한다.
+try {
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $OutputEncoding = [System.Text.Encoding]::UTF8
+} catch { }
 
 $SourceDir = $PSScriptRoot
 

@@ -312,13 +312,12 @@ Agent(
 
 ## 환경별 호출 형식 차이
 
-이 파일은 **Claude Code 기준 `Agent(...)` syntax**로 작성됨.
-`setup.ps1 -Opencode` 모드는 빌드 시 다음 변환을 자동 적용:
+이 파일은 **Claude Code 기준 syntax**로 작성됨.
+`setup.ps1 -Opencode` / `setup.sh --opencode` 모드가 빌드 시 다음을 자동 변환:
 
-| Claude Code | opencode 변환 결과 |
-|-------------|---------------------|
-| `Agent(subagent_type="general-purpose", description="X", prompt="Y")` | `` `task` 도구로 subagent 호출:` `` (description=X, prompt=Y) |
-| `AskUserQuestion(...)` | `STOP(텍스트 응답 대기)` |
-| `.claude/agents/foo.md` | `.opencode/agent/foo.md` |
+- subagent 호출 형식 (Agent 도구 호출 → opencode task 도구 호출 텍스트)
+- 사용자 질문 도구 → STOP 텍스트 응답 대기 형식
+- 디렉터리 경로 (claude 계열 → opencode 계열, 단수형 매핑)
 
-따라서 원본은 한 형식으로 유지, 두 환경 모두 지원.
+따라서 원본은 Claude Code 형식 하나로 유지하고, 두 환경 모두 지원한다.
+opencode 변환 결과물은 타겟 프로젝트의 `.opencode/` 하위에서 확인.
