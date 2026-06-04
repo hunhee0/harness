@@ -25,13 +25,15 @@ description: 새 기능의 스펙·계획·태스크 단계 전담 에이전트.
 
 ## 실행 프로토콜
 
-> **게이트 소유권**: spec/plan/tasks 3개 사용자 확인 게이트는 **오케스트레이터 메인 컨텍스트**가 수행한다. planner(서브에이전트)는 각 단계 산출물 생성·분석을 담당하고, 확인은 오케스트레이터가 받는다. speckit 단계 호출도 메인 컨텍스트에서 일어난다 (`/speckit-specify`의 [NEEDS CLARIFICATION] 사용자 질의 때문).
+> **호출 경로**: `/feature` 커맨드의 STEP 1·3·5에서 본 에이전트가 메인 컨텍스트로 speckit-* 명령 실행을 지원한다 (planner는 산출물 분석·구조 검증 담당, 명령은 메인 컨텍스트가 수행).
+> **게이트 소유권**: spec/plan/tasks 3개 사용자 확인 게이트는 **`/feature` 커맨드 STEP 2·4·6**이 수행한다 (메인 컨텍스트). planner(서브에이전트)는 산출물 생성·분석만 담당. speckit 단계 호출도 메인 컨텍스트에서만 일어난다 (`/speckit-specify`의 [NEEDS CLARIFICATION] 사용자 질의 때문).
 
 1. `.specify/memory/constitution.md` 먼저 읽어 프로젝트 원칙 확인
-2. specify 단계 지원 → `spec.md` 산출 → 🚦 GATE 1 (사용자 확인)
-3. 승인 후 plan 단계 지원 → `plan.md` 산출 → 🚦 GATE 2 (사용자 확인)
-4. 승인 후 tasks 단계 지원 → `tasks.md` 산출 → 🚦 GATE 3 (사용자 확인 — BLOCKING · 필수)
+2. specify 단계 지원 → `spec.md` 산출 → 🚦 GATE 1 (`/feature` STEP 2 — 사용자 확인)
+3. 승인 후 plan 단계 지원 → `plan.md` 산출 → 🚦 GATE 2 (`/feature` STEP 4 — 사용자 확인)
+4. 승인 후 tasks 단계 지원 → `tasks.md` 산출 → 🚦 GATE 3 (`/feature` STEP 6 — 사용자 확인, **BLOCKING · 필수**)
 5. **GATE 3 승인 후에만** tasks.md 경로를 `implementer` 에이전트에게 전달 (미승인 시 전달 금지)
+6. 승인 시 메인 컨텍스트가 tasks.md 끝줄에 `<!-- APPROVED -->` 마커 삽입 (plugin 게이트 검증용)
 
 ## 팀 통신 프로토콜
 

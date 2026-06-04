@@ -121,8 +121,41 @@ _rewrite_one() {
             if grep -q '\.claude' "$f" 2>/dev/null; then
                 sed_inplace_opencode "$f"
             fi
+            # Agent(...) -> opencode task tool 텍스트, AskUserQuestion -> STOP 텍스트
+            # 멀티라인 캡처 필요 — sed 한계로 perl 사용 (macOS/Linux 표준 설치)
+            if command -v perl >/dev/null 2>&1; then
+                if grep -E -q 'Agent\(|AskUserQuestion' "$f" 2>/dev/null; then
+                    rewrite_agent_calls_opencode "$f"
+                fi
+            fi
             ;;
     esac
+}
+
+# Agent(...) -> opencode `task` tool 호출 텍스트
+# opencode 공식: agent 본문에서 subagent 를 task tool 로 호출. 이름은 @ prefix 없이.
+# Triple-quote ("""...""") 양식 먼저, 그 다음 단일 quote 양식.
+# AskUserQuestion -> opencode 등가 도구 없음. STOP+텍스트 fallback.
+rewrite_agent_calls_opencode() {
+    local file="$1"
+    perl -i -0777 -pe '
+        s{
+            Agent\(
+            \s* subagent_type="[^"]*",
+            \s* description="([^"]+)",
+            \s* prompt="""([\s\S]+?)"""
+            \s* \)
+        }{`task` 도구로 subagent 호출:\n  description: "$1"\n  prompt: |\n$2}gx;
+        s{
+            Agent\(
+            \s* subagent_type="[^"]*",
+            \s* description="([^"]+)",
+            \s* prompt="([^"]+)"
+            \s* \)
+        }{`task` 도구로 subagent 호출:\n  description: "$1"\n  prompt: |\n$2}gx;
+        s{`AskUserQuestion`}{STOP(텍스트로 사용자에게 옵션 제시 후 응답 대기)}g;
+        s{AskUserQuestion}{STOP(텍스트로 사용자에게 옵션 제시 후 응답 대기)}g;
+    ' "$file"
 }
 
 # Agent 파일명 -> KTDS 모델 (bash 3.2 호환: 연관배열 대신 case)
@@ -286,10 +319,13 @@ echo "  3. docs/rules/01-project-structure.md — 실제 기술 스택 확정"
 echo "  4. (선택) docs/rules/03-ai-agent-guidelines.md — 프로젝트별 스킬 목록 정리"
 if $OPENCODE; then
     echo ""
-    echo "  Opencode 모드 — 추가 수동 검토 필요:"
-    echo "    a) .opencode/skills/ 및 command 파일 본문의 'Agent(...)' / 'Skill(...)' 호출 표기"
-    echo "       사내 fork의 '@agent-name' / '/command-name' 양식으로 교체"
-    echo "    b) .opencode/settings.json 의 훅 키 (UserPromptSubmit 등) — opencode 이벤트명으로 마이그레이션"
+    echo "  Opencode 모드 — 자동 변환 완료 + 추가 수동 검토 필요:"
+    echo "    [auto] Agent(subagent_type=..., description=X, prompt=Y) -> 'task' tool 호출 텍스트로 자동 변환"
+    echo "    [auto] AskUserQuestion -> STOP(텍스트 응답 대기) 로 자동 변환"
+    echo "    [auto] .claude/{agents,skills,commands,rules} -> .opencode/{agent,skills,command,rule} 경로 자동 변환"
+    echo ""
+    echo "    a) /Skill(...) 같은 그 외 Claude Code 전용 도구 호출이 있으면 사내 fork 등가 표기로 수동 치환 필요"
+    echo "    b) .opencode/settings.json 의 훅 키 (UserPromptSubmit 등) — opencode 는 plugin (.opencode/plugin/*.ts) 사용. settings.json hook 은 무력화됨"
     echo "    c) primary agent 지정: 기본은 모두 subagent. 한 agent의 frontmatter 를 mode: primary 로 변경"
     echo "    d) .opencode/skills/<skill>/ 의 nested 구조 (SKILL.md 보존) + 보조 파일 (scripts/) — 사내 fork 지원 여부 확인"
     echo "    e) .opencode/rule/ 디렉토리명 — 사내 fork 의 rules 디렉토리 규약 확인"

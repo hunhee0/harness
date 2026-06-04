@@ -3,6 +3,24 @@ name: harness-orchestrator
 description: 이 프로젝트의 기능 개발 파이프라인 진입점. "기능 만들어줘", "구현해줘", "개발 시작", "새 기능 추가", "스펙 작성해줘", "태스크 분해", "이어서 진행", "다시 구현", "개발 재개", "재실행", "업데이트", "수정", "보완", "결과 개선", "feature 보완" 등 기능 개발·수정·보완 요청 시 반드시 이 스킬을 사용할 것. planner → implementer → reviewer → qa 에이전트 파이프라인을 통해 SDD 워크플로우를 강제한다.
 ---
 
+> ## ⚡ 실행 진입점: `/feature` 슬래시 커맨드
+>
+> **이 스킬은 deterministic 흐름의 reference 문서다. 실제 실행은 반드시 `/feature` 커맨드로 한다.**
+>
+> 자연어 요청 ("기능 만들어줘", "구현해줘", "이어서 진행" 등)을 받으면:
+> 1. 다음 1줄 출력: `→ /feature 커맨드로 deterministic 흐름 진입`
+> 2. 즉시 `/feature <기능 설명>` 호출 (또는 `resume`/`continue`)
+> 3. 아래 Phase 0~5 표는 `/feature` STEP 0~10의 라우팅·팬아웃 규칙 참조용
+>
+> **왜?**
+> - `/feature`는 단일 명령형 step 시퀀스로 자율 분기를 제거 (모델이 약해도 작동)
+> - 이 SKILL.md는 각 STEP에서 참조할 매트릭스·트리거 표를 제공하는 reference
+> - 양쪽이 충돌하면 `/feature.md` 의 STEP 정의가 우선
+>
+> **opencode 환경**: setup.ps1이 자동으로 .claude → .opencode 변환 + Agent(...) → `task` tool 텍스트 + AskUserQuestion → STOP 텍스트로 치환.
+
+---
+
 ## Phase 0: 컨텍스트 확인
 
 실행 시작 전 현재 상태 파악:

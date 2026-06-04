@@ -65,20 +65,47 @@ function Convert-ContentForOpencode {
 
     $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
+    # Agent(...) -> opencode `task` tool 호출 텍스트.
+    # opencode 공식: agent 본문에서 subagent 를 task tool 로 호출. 이름은 @ prefix 없이.
+    # Claude Code 의 Agent(subagent_type="general-purpose", description=X, prompt=Y) 패턴을
+    # opencode 친화적인 텍스트로 변환하여 LLM 이 task tool 호출로 매핑하도록 유도.
+    # Triple-quote ("""...""") 양식 먼저 (더 구체적), 그 다음 단일 quote 양식.
+    $agentPatternTriple = '(?s)Agent\(\s*subagent_type="[^"]*",\s*description="([^"]+)",\s*prompt="""([\s\S]+?)"""\s*\)'
+    $agentPatternSingle = '(?s)Agent\(\s*subagent_type="[^"]*",\s*description="([^"]+)",\s*prompt="([^"]+)"\s*\)'
+    $agentReplacement = @'
+`task` 도구로 subagent 호출:
+  description: "$1"
+  prompt: |
+$2
+'@
+
     foreach ($f in $files) {
         if ($TextExtensions -notcontains $f.Extension.ToLower()) { continue }
 
         $content = [System.IO.File]::ReadAllText($f.FullName, [System.Text.Encoding]::UTF8)
-        if ($content -notmatch '\.claude') { continue }
+
+        $needsRewrite = ($content -match '\.claude') -or `
+                        ($content -match 'Agent\(\s*subagent_type') -or `
+                        ($content -match 'AskUserQuestion')
+        if (-not $needsRewrite) { continue }
 
         $new = $content
-        # Priority-ordered: directory-aware mappings first, fallback last
+
+        # 1) 디렉터리 경로 매핑 (.claude -> .opencode, 우선순위 순서)
         $new = $new -replace '\.claude([\\/])agents',   '.opencode$1agent'
         $new = $new -replace '\.claude([\\/])skills',   '.opencode$1skills'
         $new = $new -replace '\.claude([\\/])commands', '.opencode$1command'
         $new = $new -replace '\.claude([\\/])rules',    '.opencode$1rule'
         # fallback (bare .claude or .claude/<other>)
         $new = $new -replace '\.claude',                '.opencode'
+
+        # 2) Agent(...) tool 호출 -> opencode task tool 호출 텍스트
+        $new = $new -replace $agentPatternTriple, $agentReplacement
+        $new = $new -replace $agentPatternSingle, $agentReplacement
+
+        # 3) AskUserQuestion -> STOP+텍스트 fallback (opencode 등가 도구 없음)
+        $new = $new -replace '`AskUserQuestion`', 'STOP(텍스트로 사용자에게 옵션 제시 후 응답 대기)'
+        $new = $new -replace 'AskUserQuestion',   'STOP(텍스트로 사용자에게 옵션 제시 후 응답 대기)'
 
         [System.IO.File]::WriteAllText($f.FullName, $new, $utf8NoBom)
     }
@@ -328,10 +355,12 @@ Write-Host "  3. docs\rules\01-project-structure.md  - finalize actual tech stac
 Write-Host "  4. (optional) docs\rules\03-ai-agent-guidelines.md  - list project skills"
 if ($Opencode) {
     Write-Host ""
-    Write-Host "  Opencode mode — additional manual review required:" -ForegroundColor Cyan
-    Write-Host "    a) Skill bodies in .opencode/skills/ and command files reference 'Agent(...)' / 'Skill(...)' tool calls." -ForegroundColor Cyan
-    Write-Host "       Replace with opencode '@agent-name' / '/command-name' per your fork." -ForegroundColor Cyan
-    Write-Host "    b) .opencode/settings.json has hook keys (UserPromptSubmit, etc.) — migrate to opencode event names." -ForegroundColor Cyan
+    Write-Host "  Opencode mode — auto-converted (no action) + manual review required:" -ForegroundColor Cyan
+    Write-Host "    [auto] Agent(subagent_type=..., description=X, prompt=Y) -> 'task' tool 호출 텍스트로 변환 완료" -ForegroundColor Green
+    Write-Host "    [auto] AskUserQuestion -> STOP(텍스트 응답 대기) 로 변환 완료" -ForegroundColor Green
+    Write-Host "    [auto] .claude/{agents,skills,commands,rules} -> .opencode/{agent,skills,command,rule} 경로 변환 완료" -ForegroundColor Green
+    Write-Host "    a) /Skill(...) 같은 그 외 Claude Code 전용 도구 호출이 있으면 사내 fork 의 등가 표기로 수동 치환 필요" -ForegroundColor Cyan
+    Write-Host "    b) .opencode/settings.json has hook keys (UserPromptSubmit, etc.) — opencode 는 plugin (.opencode/plugin/*.ts) 사용. settings.json hook 은 무력화됨." -ForegroundColor Cyan
     Write-Host "    c) Decide which agent should be 'mode: primary' (default: all subagent). Update one frontmatter." -ForegroundColor Cyan
     Write-Host "    d) Verify .opencode/skills/<skill>/ nested structure (SKILL.md kept) with companion files (scripts/) is supported by your fork." -ForegroundColor Cyan
     Write-Host "    e) Check .opencode/rule/ vs your fork's expected rules directory name." -ForegroundColor Cyan
