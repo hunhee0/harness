@@ -6,13 +6,15 @@
 #   ./setup.sh ../my-project --dry-run
 #   ./setup.sh ../my-project --opencode
 #     ↳ opencode 자동 변환:
-#       - .claude/agents   -> .opencode/agent     (단수 + frontmatter: name/color 제거, mode 추가, model→KTDS Qwen, tools 배열 라인 제거)
-#       - .claude/skills   -> .opencode/skills    (그대로 유지; SKILL.md 보존)
-#       - .claude/commands -> .opencode/command   (병합)
-#       - .claude/rules    -> .opencode/rule      (단수)
+#       - .claude/agents   -> .opencode/agents   (복수 유지 + frontmatter: name/color 제거, mode: subagent, model→KTDS Qwen, tools 배열 라인 제거)
+#       - .claude/skills   -> .opencode/skills   (그대로 유지; SKILL.md 보존)
+#       - .claude/commands -> .opencode/commands (복수 유지)
+#       - .claude/rules    -> .opencode/rules    (복수 유지)
 #       - .claude/settings.json -> .opencode/settings.json
-#       - 본문 내 .claude 경로 참조는 동일 매핑으로 치환됨
-#       - Skill/Agent 호출 표기는 자동 변환 불가 — 수동 검토 필요
+#       - 본문 내 .claude 경로 참조는 prefix 만 .opencode 로 치환 (디렉터리명 보존)
+#       - Agent(...) -> opencode `task` tool 호출 텍스트 자동 변환
+#       - AskUserQuestion -> STOP(텍스트 응답 대기) 자동 변환
+#       - opencode 공식 표준 + devai fork 모두 복수형 디렉터리 (agents, skills, commands, rules, plugins) 사용
 
 set -euo pipefail
 
@@ -59,16 +61,10 @@ path_for_opencode() {
         return
     fi
 
-    # 우선순위 매핑 (긴 패턴 먼저)
-    # settings.json -> .opencode/settings.json
-    if [[ "$p" == ".claude/settings.json" ]]; then echo ".opencode/settings.json"; return; fi
-
-    # 단수형/의미 변환
-    p="${p//.claude\/agents/.opencode/agent}"
-    p="${p//.claude\/skills/.opencode/skills}"
-    p="${p//.claude\/commands/.opencode/command}"
-    p="${p//.claude\/rules/.opencode/rule}"
-    # fallback
+    # opencode 공식 표준: 모든 디렉터리 복수형 유지 (agents, skills, commands, rules, plugins).
+    # 단수형은 backward compat 일 뿐이며 devai fork 는 복수형만 안정적으로 인식.
+    # 따라서 디렉터리명은 .claude 그대로 두고 prefix 만 .opencode 로 변경.
+    p="${p//.claude\//.opencode/}"
     p="${p//.claude/.opencode}"
     echo "$p"
 }
@@ -89,12 +85,8 @@ sed_inplace_opencode() {
         fi
     }
 
-    # 우선순위 매핑 (확장 정규식 -E)
-    _se 's#\.claude([\\/])agents#.opencode\1agent#g'
-    _se 's#\.claude([\\/])skills#.opencode\1skills#g'
-    _se 's#\.claude([\\/])commands#.opencode\1command#g'
-    _se 's#\.claude([\\/])rules#.opencode\1rule#g'
-    # fallback
+    # 디렉터리명은 .claude 그대로 두고 prefix 만 .opencode 로 변경 (복수형 유지).
+    _se 's#\.claude([\\/])#.opencode\1#g'
     _se 's#\.claude#.opencode#g'
 }
 
@@ -276,10 +268,10 @@ echo "  대상: $TARGET_DIR"
 $DRY_RUN  && echo "  모드: DRY RUN"
 if $OPENCODE; then
     echo "  모드: OPENCODE"
-    echo "    .claude/agents   -> .opencode/agent     (단수 + frontmatter: model→KTDS Qwen, tools 제거)"
-    echo "    .claude/skills   -> .opencode/skills    (그대로 유지; SKILL.md 보존)"
-    echo "    .claude/commands -> .opencode/command   (병합)"
-    echo "    .claude/rules    -> .opencode/rule"
+    echo "    .claude/agents   -> .opencode/agents   (복수 유지 + frontmatter: mode: subagent, model→KTDS Qwen, tools 제거)"
+    echo "    .claude/skills   -> .opencode/skills   (그대로 유지; SKILL.md 보존)"
+    echo "    .claude/commands -> .opencode/commands (복수 유지)"
+    echo "    .claude/rules    -> .opencode/rules    (복수 유지)"
     echo "    .claude/settings.json -> .opencode/settings.json"
 fi
 echo ""
@@ -295,7 +287,7 @@ copy_dir  ".claude/rules"               "ECC 부속 규칙"
 
 # opencode 후처리 (디렉토리 복사 직후, settings.json 복사 전)
 if $OPENCODE && ! $DRY_RUN; then
-    convert_agent_frontmatter "$TARGET_DIR/.opencode/agent"
+    convert_agent_frontmatter "$TARGET_DIR/.opencode/agents"
     echo "  ✓ Opencode 후처리 (agent frontmatter)"
 fi
 
@@ -322,13 +314,13 @@ if $OPENCODE; then
     echo "  Opencode 모드 — 자동 변환 완료 + 추가 수동 검토 필요:"
     echo "    [auto] Agent(subagent_type=..., description=X, prompt=Y) -> 'task' tool 호출 텍스트로 자동 변환"
     echo "    [auto] AskUserQuestion -> STOP(텍스트 응답 대기) 로 자동 변환"
-    echo "    [auto] .claude/{agents,skills,commands,rules} -> .opencode/{agent,skills,command,rule} 경로 자동 변환"
+    echo "    [auto] .claude/{agents,skills,commands,rules} -> .opencode/{agents,skills,commands,rules} (복수 유지) 경로 자동 변환"
     echo ""
     echo "    a) /Skill(...) 같은 그 외 Claude Code 전용 도구 호출이 있으면 사내 fork 등가 표기로 수동 치환 필요"
     echo "    b) .opencode/settings.json 의 훅 키 (UserPromptSubmit 등) — opencode 는 plugin (.opencode/plugin/*.ts) 사용. settings.json hook 은 무력화됨"
     echo "    c) primary agent 지정: 기본은 모두 subagent. 한 agent의 frontmatter 를 mode: primary 로 변경"
     echo "    d) .opencode/skills/<skill>/ 의 nested 구조 (SKILL.md 보존) + 보조 파일 (scripts/) — 사내 fork 지원 여부 확인"
-    echo "    e) .opencode/rule/ 디렉토리명 — 사내 fork 의 rules 디렉토리 규약 확인"
+    echo "    e) .opencode/rules/ 는 .claude/rules/ 의 ECC 부속 규칙 보존용. opencode 표준은 AGENTS.md 단일 파일 권장 — 필요 시 변환"
     echo "    f) agent 'model:' 이 KTDS Qwen 으로 매핑됨 ([KTDS] Qwen3.6-27B-FP8 메인 / -35B-A3B-FP8 서브) — opencode provider 가 기대하는 model id 형식 확인"
 fi
 echo ""

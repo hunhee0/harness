@@ -5,13 +5,15 @@
 #   .\setup.ps1 -TargetDir "../my-project" -DryRun
 #   .\setup.ps1 -TargetDir "../my-project" -Opencode
 #     ↳ Full opencode adaptation:
-#       - .claude/agents   -> .opencode/agent   (singular + frontmatter: drop name/color, add mode: subagent, map model->KTDS Qwen, drop tools array line)
-#       - .claude/skills   -> .opencode/skills  (kept as its own folder; SKILL.md preserved)
-#       - .claude/commands -> .opencode/command (merged)
-#       - .claude/rules    -> .opencode/rule    (singular)
+#       - .claude/agents   -> .opencode/agents   (복수 유지 + frontmatter: drop name/color, add mode: subagent, map model->KTDS Qwen, drop tools array line)
+#       - .claude/skills   -> .opencode/skills   (kept as its own folder; SKILL.md preserved)
+#       - .claude/commands -> .opencode/commands (복수 유지)
+#       - .claude/rules    -> .opencode/rules    (복수 유지)
 #       - .claude/settings.json -> .opencode/settings.json
-#       - Content references rewritten with same path mapping
-#       - Skill/Agent tool call sites in markdown bodies require manual review (not auto-converted)
+#       - Content references rewritten with same prefix-only mapping (.claude -> .opencode)
+#       - Agent(subagent_type=..., description=X, prompt=Y) -> opencode task tool 호출 텍스트 자동 변환
+#       - AskUserQuestion -> STOP(텍스트 응답 대기) 자동 변환
+#       - opencode 공식 표준 + devai fork 모두 복수형 (agents, skills, commands, rules, plugins) 사용
 
 param(
     [Parameter(Mandatory=$true, HelpMessage="Target project directory")]
@@ -44,18 +46,11 @@ function Convert-PathForOpencode {
     param([string]$Path)
     if (-not $Opencode) { return $Path }
 
-    $mapped = $Path
-    # settings.json -> .opencode/settings.json
-    $mapped = $mapped -replace '\.claude[\\/]+settings\.json', '.opencode\settings.json'
-    # agents -> agent (singular)
-    $mapped = $mapped -replace '\.claude[\\/]+agents', '.opencode\agent'
-    # skills -> skills (kept as its own folder, not merged into command)
-    $mapped = $mapped -replace '\.claude[\\/]+skills', '.opencode\skills'
-    # commands -> command (merged with skills)
-    $mapped = $mapped -replace '\.claude[\\/]+commands', '.opencode\command'
-    # rules -> rule (singular)
-    $mapped = $mapped -replace '\.claude[\\/]+rules', '.opencode\rule'
-    # fallback for any other .claude reference (e.g., bare ".claude" or .claude/foo)
+    # opencode 공식 표준: 모든 디렉터리 복수형 유지 (agents, skills, commands, rules, plugins).
+    # 단수형은 backward compat 일 뿐이며 devai fork 는 복수형만 안정적으로 인식.
+    # 따라서 디렉터리명은 .claude 그대로 두고 prefix 만 .opencode 로 변경.
+    $mapped = $Path -replace '\.claude([\\/])', '.opencode$1'
+    # bare ".claude" (디렉터리 구분자 없이 끝나는 경우) 도 처리
     $mapped = $mapped -replace '\.claude', '.opencode'
     return $mapped
 }
@@ -99,13 +94,11 @@ $2
 
         $new = $content
 
-        # 1) 디렉터리 경로 매핑 (.claude -> .opencode, 우선순위 순서)
-        $new = $new -replace '\.claude([\\/])agents',   '.opencode$1agent'
-        $new = $new -replace '\.claude([\\/])skills',   '.opencode$1skills'
-        $new = $new -replace '\.claude([\\/])commands', '.opencode$1command'
-        $new = $new -replace '\.claude([\\/])rules',    '.opencode$1rule'
-        # fallback (bare .claude or .claude/<other>)
-        $new = $new -replace '\.claude',                '.opencode'
+        # 1) 디렉터리 경로 매핑 (.claude -> .opencode, 복수형 그대로 유지).
+        #    opencode 공식 표준 + devai fork 둘 다 복수형 (agents, skills, commands, rules, plugins) 안정 인식.
+        $new = $new -replace '\.claude([\\/])', '.opencode$1'
+        # bare ".claude" (끝/구분자 없음) 도 처리
+        $new = $new -replace '\.claude',        '.opencode'
 
         # 2) Agent(...) tool 호출 -> opencode task tool 호출 텍스트
         $new = $new -replace $agentPatternTriple, $agentReplacement
@@ -241,10 +234,10 @@ Write-Host "  Target: $TargetDir"
 if ($DryRun)   { Write-Host "  Mode: DRY RUN (no actual copy)" -ForegroundColor Yellow }
 if ($Opencode) {
     Write-Host "  Mode: OPENCODE" -ForegroundColor Cyan
-    Write-Host "    .claude/agents   -> .opencode/agent     (singular + frontmatter: model->KTDS Qwen, drop tools line)" -ForegroundColor Cyan
-    Write-Host "    .claude/skills   -> .opencode/skills    (kept as-is; SKILL.md preserved)" -ForegroundColor Cyan
-    Write-Host "    .claude/commands -> .opencode/command   (merged)" -ForegroundColor Cyan
-    Write-Host "    .claude/rules    -> .opencode/rule" -ForegroundColor Cyan
+    Write-Host "    .claude/agents   -> .opencode/agents   (복수 유지 + frontmatter: model->KTDS Qwen, mode: subagent, drop tools line)" -ForegroundColor Cyan
+    Write-Host "    .claude/skills   -> .opencode/skills   (kept as its own folder; SKILL.md preserved)" -ForegroundColor Cyan
+    Write-Host "    .claude/commands -> .opencode/commands (복수 유지)" -ForegroundColor Cyan
+    Write-Host "    .claude/rules    -> .opencode/rules    (복수 유지)" -ForegroundColor Cyan
     Write-Host "    .claude/settings.json -> .opencode/settings.json" -ForegroundColor Cyan
 }
 Write-Host ""
@@ -271,7 +264,7 @@ Copy-HarnessDir ".claude\rules"  "ECC reference rules"
 
 # Opencode-specific post-processing (after directory copies, before settings.json)
 if ($Opencode -and -not $DryRun) {
-    $agentTarget = Join-Path $TargetDir ".opencode\agent"
+    $agentTarget = Join-Path $TargetDir ".opencode\agents"
     Convert-AgentFrontmatter $agentTarget
     Write-Host "  [OK] Opencode post-process (agent frontmatter)" -ForegroundColor Green
 }
@@ -366,12 +359,12 @@ if ($Opencode) {
     Write-Host "  Opencode mode — auto-converted (no action) + manual review required:" -ForegroundColor Cyan
     Write-Host "    [auto] Agent(subagent_type=..., description=X, prompt=Y) -> 'task' tool 호출 텍스트로 변환 완료" -ForegroundColor Green
     Write-Host "    [auto] AskUserQuestion -> STOP(텍스트 응답 대기) 로 변환 완료" -ForegroundColor Green
-    Write-Host "    [auto] .claude/{agents,skills,commands,rules} -> .opencode/{agent,skills,command,rule} 경로 변환 완료" -ForegroundColor Green
+    Write-Host "    [auto] .claude/{agents,skills,commands,rules} -> .opencode/{agents,skills,commands,rules} (복수 유지) 경로 변환 완료" -ForegroundColor Green
     Write-Host "    a) /Skill(...) 같은 그 외 Claude Code 전용 도구 호출이 있으면 사내 fork 의 등가 표기로 수동 치환 필요" -ForegroundColor Cyan
     Write-Host "    b) .opencode/settings.json has hook keys (UserPromptSubmit, etc.) — opencode 는 plugin (.opencode/plugin/*.ts) 사용. settings.json hook 은 무력화됨." -ForegroundColor Cyan
     Write-Host "    c) Decide which agent should be 'mode: primary' (default: all subagent). Update one frontmatter." -ForegroundColor Cyan
     Write-Host "    d) Verify .opencode/skills/<skill>/ nested structure (SKILL.md kept) with companion files (scripts/) is supported by your fork." -ForegroundColor Cyan
-    Write-Host "    e) Check .opencode/rule/ vs your fork's expected rules directory name." -ForegroundColor Cyan
+    Write-Host "    e) .opencode/rules/ 디렉터리는 .claude/rules/ 의 ECC 부속 규칙 보존용. opencode 표준은 AGENTS.md 단일 파일 권장 — 필요 시 변환." -ForegroundColor Cyan
     Write-Host "    f) Agent 'model:' mapped to KTDS Qwen ([KTDS] Qwen3.6-27B-FP8 main / -35B-A3B-FP8 sub) — confirm the model id format your opencode provider expects." -ForegroundColor Cyan
 }
 Write-Host ""
