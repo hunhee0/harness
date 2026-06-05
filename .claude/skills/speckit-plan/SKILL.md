@@ -8,6 +8,10 @@ metadata:
 disable-model-invocation: true
 ---
 
+## 🇰🇷 출력 언어 (절대 규칙)
+
+**모든 산출물·응답은 한국어로 작성한다.** 영어로 답하지 말 것. 코드·키워드·식별자·기술 용어(REST·API·gRPC·OAuth 등 표준 영문 용어)는 원문 유지하되 그 외 산문·제목·설명·결정 사항·근거는 모두 한국어. 템플릿(`.specify/templates/plan-template.md`)이 한국어이므로 그 문체와 어휘를 따른다.
+
 ## 사용자 입력
 
 ```text

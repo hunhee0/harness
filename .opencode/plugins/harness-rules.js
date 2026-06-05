@@ -10,8 +10,13 @@
 //
 // 검증된 동작: output.system 은 문자열 배열(len 1). 마지막 원소에 append (push 는 호출이 깨지므로 금지).
 
+const LANG =
+  "\n\n[언어·절대규칙] 모든 응답·산출물(spec.md/plan.md/tasks.md 포함)은 한국어로 작성한다. " +
+  "영어로 답하지 말 것. 코드·키워드·식별자·표준 영문 기술용어(HTTP·REST·CRUD·OAuth 등)·로그·오류문자열은 원문 유지. " +
+  "그 외 산문·제목·설명·질문·결정·근거는 모두 한국어.\n"
+
 const CAVEMAN =
-  "\n\n[출력규칙·최우선] CAVEMAN 항상 활성. 관사·잡담·인사·헤징 제거. " +
+  "\n[출력규칙·최우선] CAVEMAN 항상 활성. 관사·잡담·인사·헤징 제거. " +
   "단편 허용. 기술용어·코드·오류문자열 정확 유지. " +
   "예외(정상문장): 코드·커밋·문서, 보안경고, 파괴적작업 확인, 선택지질문, diff/요약.\n"
 
@@ -38,7 +43,7 @@ export const HarnessRules = async () => {
     "experimental.chat.system.transform": async (input, output) => {
       const s = output && output.system
       if (Array.isArray(s) && s.length && typeof s[s.length - 1] === "string") {
-        s[s.length - 1] += CAVEMAN + KARPATHY + SDD
+        s[s.length - 1] += LANG + CAVEMAN + KARPATHY + SDD
       }
     },
   }
