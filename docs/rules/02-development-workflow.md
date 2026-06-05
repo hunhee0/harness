@@ -18,7 +18,8 @@
 | 3 | `/speckit-tasks` | `docs/specs/{feature}/tasks.md` | 작업 분해 |
 | 4 | `/speckit-implement` | `src/` | 실제 구현 |
 
-> ⚡ **단계 이동 전 반드시 사용자 확인 필요** — 각 단계 완료 후 다음 단계로 넘어가기 전 사용자에게 확인
+> ⚡ **단계 이동 전 반드시 사용자 확인 필요** — 각 단계 완료 후 다음 단계로 넘어가기 전 사용자에게 확인.
+> `harness-orchestrator` 자동 흐름에서는 spec/plan/tasks 뿐 아니라 implement·review·qa·완료까지 **모든 Phase 전환에 승인 게이트(GATE 1~7)** 가 적용된다. 상세는 `harness-orchestrator` SKILL.md.
 
 ### 스펙 파일 관리 규칙
 

@@ -191,4 +191,6 @@
    )
    ```
 
+   > opencode/devai 환경: setup `-Opencode` 변환이 위 `Agent(...)` 를 `task(subagent_type="<실제 agent 이름>", load_skills=[...], ...)` 로 자동 변환한다 (prompt 의 `agents/<name>.md` 에서 이름 추출, planner/implementer 는 load_skills 자동 주입). 원본은 Claude Code 형식으로 유지.
+
 7. **팬아웃 비용 의식**: 트리거 조건 외 팬아웃 호출 금지. 부분 재실행 시 변경 스택만 호출하여 절약.

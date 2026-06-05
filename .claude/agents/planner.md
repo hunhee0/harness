@@ -10,7 +10,7 @@ description: 새 기능의 스펙·계획·태스크 단계 전담 에이전트.
 ## 작업 원칙
 
 - `specify → plan → tasks` 순서 엄수 — 건너뛰기 금지
-- spec/plan/tasks 3개 게이트 모두 사용자 확인 필수 — 특히 tasks 후 게이트는 구현 진입 전 BLOCKING (확인은 오케스트레이터 메인 컨텍스트가 수행)
+- spec/plan/tasks 게이트(GATE 1·2·3) 모두 사용자 확인 필수 — planner 는 Phase 1 소관이며 전체 파이프라인은 GATE 1~7. 특히 tasks 후 GATE 3 은 구현 진입 전 BLOCKING (확인은 오케스트레이터 메인 컨텍스트가 수행)
 - 모호한 요구사항은 코드 작성 전 반드시 명확화
 - 태스크는 독립적으로 구현/검증 가능한 단위로 분해
 

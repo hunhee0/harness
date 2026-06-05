@@ -153,235 +153,112 @@ chmod +x setup.sh
 
 ### 2-1. 자동 변환 (`-Opencode` / `--opencode`) 이 수행하는 작업
 
-#### A. 디렉토리·파일 매핑
+#### A. 디렉토리·파일 매핑 (모두 복수형 유지)
+
+opencode 공식 표준 + devai fork 모두 복수형 디렉터리를 사용한다. 변환은 디렉터리명을 그대로 두고 prefix 만 `.opencode/` 로 바꾼다.
 
 | 원본 (Claude Code) | 변환 후 (opencode) | 비고 |
 |---|---|---|
-| `.claude/agents/` | `.opencode/agent/` | 단수형 |
-| `.claude/skills/` | `.opencode/skills/` | **그대로 유지** (SKILL.md 보존; command 로 병합하지 않음) |
-| `.claude/commands/` | `.opencode/command/` | 단수형 |
-| `.claude/rules/` | `.opencode/rule/` | 단수형 |
-| `.claude/settings.json` | `.opencode/settings.json` | 프로젝트 설정 |
-| 기타 `.claude/*` 참조 | `.opencode/*` | fallback 매핑 |
+| `.claude/agents/` | `.opencode/agents/` | 복수형 유지 |
+| `.claude/skills/` | `.opencode/skills/` | 복수형 유지 (SKILL.md 보존) |
+| `.claude/commands/` | `.opencode/commands/` | 복수형 유지 |
+| `.claude/rules/` | `.opencode/rules/` | 복수형 유지 |
+| `.claude/settings.json` | **(미복사)** | opencode 는 hook 을 plugin 으로 대체 → settings.json 불필요 |
+| (신규 생성) | `.opencode/plugins/harness-rules.js` | caveman + Karpathy 4원칙 + SDD 규칙을 system 에 주입하는 plugin |
+| 기타 `.claude/*` 참조 | `.opencode/*` | prefix 만 치환 (디렉터리명 보존) |
 
 #### B. Agent frontmatter 자동 변환
 
-`.opencode/agent/*.md` 의 frontmatter에 다음 변환을 적용:
+`.opencode/agents/*.md` 의 frontmatter:
 
 | 항목 | 동작 |
 |---|---|
-| `name:` 라인 | **제거** (opencode는 파일명을 사용) |
-| `color:` 라인 | **제거** (opencode 무관 필드) |
-| `mode: subagent` | description 다음에 **삽입** (없을 때) |
-| `model:` | **KTDS Qwen 모델로 매핑/삽입** (아래 표 참조) |
-| `tools: [..]` 배열 라인 | **제거** (opencode는 record 형식 기대 — 미지정 시 기본 도구 상속) |
+| `name:` | **보존** (devai 필수 필드. 원본에 없으면 파일명으로 삽입) |
+| `color:` | 제거 |
+| `mode: subagent` | description 다음에 삽입 (없을 때) |
+| `model:` | `ABCLab/[KTDS] Qwen3.6-*` 로 매핑/삽입 (아래 표) |
+| `tools: [..]` 배열 라인 | 제거 (미지정 시 기본 도구 상속) |
 
-**KTDS 모델 매핑** (Claude 모델 미지원 fork 가정):
+**KTDS 모델 매핑**:
 
 | 모델 | 용도 | 적용 agent |
 |---|---|---|
-| `[KTDS] Qwen3.6-27B-FP8` | dense 27B, 깊은 추론·생성 | architect, code-architect, security-reviewer, tdd-guide, planner, implementer, reviewer, qa (L1 워크플로 + 설계·전략) |
-| `[KTDS] Qwen3.6-35B-A3B-FP8` | MoE active 3B, 경량·빠름 | code-reviewer, python-reviewer, java-reviewer, typescript-reviewer, fastapi-reviewer, loop-operator, doc-updater (패턴 리뷰·루프·문서) |
+| `ABCLab/[KTDS] Qwen3.6-27B-FP8` | dense 27B, 깊은 추론·생성 | architect, code-architect, security-reviewer, tdd-guide, planner, implementer, reviewer, qa |
+| `ABCLab/[KTDS] Qwen3.6-35B-A3B-FP8` | MoE active 3B, 경량·빠름 | code-reviewer, python-reviewer, java-reviewer, typescript-reviewer, fastapi-reviewer, loop-operator, doc-updater |
 
-> 매핑 표가 없는 agent 는 기본값(`27B`)로 처리.
+> 매핑 없는 agent 는 기본값(27B). `ABCLab/` provider prefix 가 사내 provider 형식과 다르면 setup 의 `$AgentModelMap`(ps1) / `ktds_model_for`(sh) 를 수정.
 
-#### C. 본문 내 경로 참조 치환
+#### C. 본문 내 호출·경로 자동 변환
 
-`.md` / `.json` / `.ps1` / `.sh` / `.toml` / `.yaml` / `.yml` / `.txt` 파일 내부의 `.claude/...` 문자열을 위 디렉토리 매핑 규칙(우선순위 동일)으로 자동 치환.
+| 원본 (Claude Code) | 변환 후 (opencode/devai) |
+|---|---|
+| `Agent(subagent_type="general-purpose", description=X, prompt="[역할] .../agents/<name>.md ...")` | `task(subagent_type="<name>", load_skills=[...], description=X, prompt=...)` — prompt 의 `agents/<name>.md` 에서 실제 agent 이름을 추출해 `subagent_type` 에 넣고, planner/implementer 는 `load_skills`(speckit-*) 자동 주입 |
+| `AskUserQuestion` | `STOP(텍스트로 사용자에게 옵션 제시 후 응답 대기)` |
+| `.claude/...` 경로 | `.opencode/...` (prefix 치환) |
 
-### 2-2. 자동 변환 후 **수동 검토** 필요 항목
+대상 확장자: `.md` / `.json` / `.ps1` / `.sh` / `.toml` / `.yaml` / `.yml` / `.txt`.
 
-스크립트 종료 시 안내되는 항목 (요약):
+### 2-2. 자동 변환 후 수동 검토 항목
 
 | 항목 | 검토 내용 |
 |---|---|
-| (a) Skill/Agent 호출 표기 | `.opencode/skills/` 및 `.opencode/command/` 본문의 `Agent(...)` / `Skill(...)` 호출 — 사내 fork 의 `@agent-name` / `/command-name` 양식으로 **수동 교체** (자동 변환 안 됨) |
-| (b) 훅 이벤트명 | `.opencode/settings.json` 의 `UserPromptSubmit` 등 Claude Code 이벤트명 → opencode 이벤트명 (`user_prompt_submit` 등) 마이그레이션 |
-| (c) primary agent 지정 | 자동 변환은 모든 agent 를 `mode: subagent` 로 둠. 사용자가 직접 대화할 메인 agent 하나의 frontmatter 를 `mode: primary` 로 변경 |
-| (d) skills nested 구조 | `.opencode/skills/<skill>/SKILL.md` + 보조 파일(`scripts/`, `references/`) 구조가 사내 fork 에서 지원되는지 확인 |
-| (e) rules 디렉토리명 | `.opencode/rule/` 가 사내 fork 의 rules 디렉토리 규약과 일치하는지 확인 |
-| (f) model id 형식 | `[KTDS] Qwen3.6-27B-FP8` 형식이 사내 opencode provider 가 기대하는 id 형식과 일치하는지 확인 |
+| (a) primary agent | 자동 변환은 모든 agent 를 `mode: subagent` 로 둔다. 사용자가 직접 `@` 로 대화할 메인 agent 가 필요하면 하나를 `mode: primary` 로 변경 (orchestrator 파이프라인만 쓰면 불필요) |
+| (b) skills nested 구조 | `.opencode/skills/<skill>/SKILL.md` + 보조 파일(`scripts/`) 구조가 사내 fork 에서 지원되는지 확인 |
+| (c) model id 형식 | `ABCLab/[KTDS] Qwen3.6-*` 가 사내 provider 가 기대하는 형식과 일치하는지 확인 |
+| (d) spec-kit | `.specify/` 가 opencode 에서 동작하는지 확인 (planner 가 `load_skills` 로 speckit-* 절차 수행) |
+| (e) plugin 동작 | `.opencode/plugins/harness-rules.js` 로드 확인 (재시작 후 응답에 규칙 반영). devai 외 fork 는 `experimental.chat.system.transform` hook 지원 여부 확인. 해제: 환경변수 `HARNESS_RULES_OFF=1` |
 
 ### 2-3. opencode 공식 구조 참고 (사내 fork 차이 검토용)
 
-opencode 공식과 본 하네스 자동 변환의 의미 차이:
-
 | 항목 | Claude Code | 자동 변환 결과 | opencode 공식 |
 |------|-------------|---------------|---------------|
-| 에이전트 위치 | `.claude/agents/*.md` | `.opencode/agent/*.md` | `.opencode/agent/*.md` |
-| 스킬 개념 | 1급 시민 (`SKILL.md` + Skill tool) | `.opencode/skills/` 폴더 유지 | **직접 대응 없음** — command/primary agent 로 수동 변환 권장 |
-| 명령 위치 | (없음, 스킬이 대신) | `.opencode/command/` | `.opencode/command/*.md` |
+| 에이전트 위치 | `.claude/agents/*.md` | `.opencode/agents/*.md` | `.opencode/agents/*.md` (복수형) |
+| 스킬 | `SKILL.md` + Skill tool | `.opencode/skills/` 유지 | `.opencode/skills/` (native skill tool) |
+| 명령 위치 | (스킬이 대신) | `.opencode/commands/` | `.opencode/commands/*.md` |
 | 전역 설정 | `~/.claude/settings.json` | — | `~/.config/opencode/opencode.json` |
-| 프로젝트 설정 | `.claude/settings.json` | `.opencode/settings.json` | 프로젝트 루트 `opencode.json` (fork 차이 가능) |
-| 모델 지정 | frontmatter `model` (선택) | `[KTDS] Qwen3.6-*` 자동 삽입 | frontmatter `model` (권장) |
-| 도구 권한 | (정책 기반) | `tools:` 배열 라인 제거 → 기본 상속 | frontmatter `tools: { write: true, edit: true }` 명시 |
-| 호출 방식 | `Skill` tool, `Agent` tool | (본문 미변환) | `@agent-name` / `/command-name` |
-| 훅 | `settings.json` 의 `hooks` (PreToolUse 등) | (본문 미변환) | `opencode.json` 의 `hooks` (이벤트명 다름) |
+| 프로젝트 설정 | `.claude/settings.json` | (미복사) | 프로젝트 `opencode.json` (fork 차이 가능) |
+| 모델 지정 | frontmatter `model` (선택) | `ABCLab/[KTDS] Qwen3.6-*` 삽입 | frontmatter `model` (권장) |
+| subagent 호출 | `Agent` tool | `task(subagent_type="<이름>", load_skills=[...])` | `task` tool / `@agent-name` |
+| 훅 | `settings.json` 의 `hooks` | `.opencode/plugins/*.js` | `.opencode/plugins/*.js` |
 
-### 2-4. 수동 변환 (자동 모드를 쓰지 않는 경우)
+### 2-4. 수동 변환 (자동 모드 미사용 시)
 
-자동 변환을 사용하지 않거나 결과를 직접 검토하며 변환하고 싶다면 다음 절차를 따른다.
+자동 모드(`-Opencode` / `--opencode`)가 §2-1 의 모든 변환을 수행하므로 **자동 모드 사용을 권장**한다. 직접 변환하려면 §2-1 표 그대로:
 
-#### Step 1. 디렉토리 이동
-
-```bash
-# §2-1 A 의 매핑 표와 동일
-mv .claude/agents      .opencode/agent
-mv .claude/skills      .opencode/skills      # 그대로 유지 권장 (또는 command 로 수동 변환)
-mv .claude/commands    .opencode/command
-mv .claude/rules       .opencode/rule
-mv .claude/settings.json .opencode/settings.json
-```
+1. 디렉터리 prefix 만 `.opencode/` 로 변경 (복수형 유지 — `agents`/`skills`/`commands`/`rules`)
+2. agent frontmatter: `name` 보존, `color`/`tools[]` 제거, `mode: subagent` + `model: "ABCLab/[KTDS] Qwen3.6-*"` 삽입
+3. 본문 `Agent(...)` → `task(subagent_type="<이름>", load_skills=[...], ...)`, `AskUserQuestion` → `STOP(...)`, `.claude/` → `.opencode/`
+4. `.opencode/plugins/harness-rules.js` 배치 (저장소 `.opencode/plugins/` 원본 복사)
+5. `settings.json` 은 복사하지 않음 (hook 은 plugin 이 대체)
 
 > 자원 규모: agents 15 + skills ~37 (speckit 5 + harness 3 + ecc 21 + superpowers 8) + commands 10.
-> 수동 변환 시 우선순위는 L1 4 + harness-orchestrator/adapt 부터.
-
-#### Step 2. 에이전트 frontmatter 변환
-
-**기존 (Claude Code):**
-
-```yaml
----
-name: planner
-description: 새 기능의 스펙·계획·태스크 단계 전담 에이전트.
-color: blue
-tools: [Read, Write, Edit, Bash]
----
-```
-
-**변환 후 (opencode, 자동 모드와 동일):**
-
-```yaml
----
-description: 새 기능의 스펙·계획·태스크 단계 전담 에이전트.
-mode: subagent
-model: "[KTDS] Qwen3.6-27B-FP8"
----
-```
-
-- `name` → 파일명으로 대체 (`planner.md` → `@planner`)
-- `color` → 제거
-- `mode: subagent` (orchestrator 가 호출) / `mode: primary` (사용자 직접 대화)
-- `model` → 사내 LLM 식별자 (KTDS Qwen 매핑 §2-1 B 표 참조, 또는 사내 정책)
-- `tools` → 배열 형식 제거. 필요 시 record 형식으로 명시 (`tools: { write: true, edit: true }`)
-
-#### Step 3. 스킬 처리 (선택지 2가지)
-
-**옵션 1: 그대로 유지 (자동 변환과 동일)** — `.opencode/skills/<skill>/SKILL.md` 구조를 사내 fork 가 지원하면 그대로 사용.
-
-**옵션 2: command 로 변환** — SKILL.md 본문을 command 파일로 복사:
-
-```yaml
-# .opencode/command/harness-orchestrator.md
----
-description: 기능 개발 파이프라인 진입점 (planner → implementer → reviewer → qa)
-agent: build              # 사내 fork에 정의된 primary agent 이름
----
-
-## Phase 0: 컨텍스트 확인
-...
-```
-
-- 호출: `/harness-orchestrator`
-- `references/` 하위 파일은 본문 인라인 또는 별도 파일로 분리
-
-#### Step 4. Agent 호출 코드 변환 (수동 — 자동 변환 안 됨)
-
-오케스트레이터·스킬 내부의 에이전트 호출 표기:
-
-**기존 (Claude Code):**
-
-```
-Agent(
-  subagent_type="general-purpose",
-  description="...",
-  prompt="""
-  [역할] .claude/agents/planner.md 정의 따를 것
-  [GOAL] ...
-  """
-)
-```
-
-**변환 (opencode 양식, 추정):**
-
-```
-@planner
-
-[GOAL] ...
-[INPUT] ...
-[OUTPUT] ...
-```
-
-또는 사내 fork 의 `spawn(agent, prompt)` / `task(...)` API. **사내 docs 확인 필수.**
-
-#### Step 5. 훅 변환 (수동 — 자동 변환 안 됨)
-
-**기존 (`.claude/settings.json`):**
-
-```json
-{
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          { "type": "command", "command": "echo [CAVEMAN LITE] ..." }
-        ]
-      }
-    ]
-  }
-}
-```
-
-**변환 (opencode `opencode.json` 또는 `.opencode/settings.json`):**
-
-```json
-{
-  "hooks": {
-    "user_prompt_submit": {
-      "command": "echo [CAVEMAN LITE] ..."
-    }
-  }
-}
-```
-
-> 정확한 이벤트명·스키마는 opencode 또는 사내 fork 문서 확인. 위는 일반적 추정.
-
-#### Step 6. spec-kit / .specify 호환성 확인
-
-`.specify/` 디렉토리는 spec-kit 종속. opencode 에서 동일하게 동작하는지 확인:
-
-| 상황 | 조치 |
-|------|------|
-| spec-kit 이 opencode 에서도 동작 | `.specify/` 그대로 유지, `/speckit-*` 명령 그대로 사용 |
-| 미동작 | spec-kit 대체 도구 도입 또는 수동 워크플로우로 변환 (스펙은 `docs/specs/` 에 직접 작성) |
 
 ### 2-5. 변환 후 검증 체크리스트
 
-- [ ] `.opencode/agent/` 15개 파일 (L1 4 + L2 11) 모두 frontmatter 유효 (`description`, `mode`, `model` 필수)
-- [ ] L1 4개는 `mode: subagent`, L2 reviewer 류도 `mode: subagent` (Phase 3 팬아웃 호출 대상)
-- [ ] 한 agent 는 `mode: primary` 로 명시적 변경 (사용자 직접 대화용)
-- [ ] `model` 이 사내 provider 가 기대하는 id 형식 (KTDS Qwen 자동 매핑값 또는 사내 정책)
-- [ ] `tools` 가 필요 시 record 형식 (`write: true, edit: true`) 으로 추가됨
-- [ ] 오케스트레이터 command/skill 이 트리거 키워드로 정상 호출됨
-- [ ] 에이전트 간 호출 표기가 사내 spawn/task API 로 **수동 변환됨** (Phase 3 팬아웃은 **같은 응답에서 N개 spawn 동시 호출** 가능해야 함 — 순차 호출만 지원하면 토큰·시간 비용 N배)
-- [ ] commands 10개 (multi-* / gan-design / update-* / test-coverage 등) 변환·등록
-- [ ] ECC/superpowers 스킬 → `.opencode/skills/` 유지 또는 command 변환 (호출 횟수 적은 스킬은 docs/ref/ 로 흡수 가능)
-- [ ] 훅이 caveman 리마인더 정상 주입 (이벤트명 마이그레이션 완료)
-- [ ] `docs/rules/` 가 LLM 컨텍스트로 로딩되는지 확인 (자동 로딩 메커니즘 차이 가능)
-- [ ] `CLAUDE.md` → opencode 가 동등한 진입 문서를 인식하는지 확인 (사내 fork 가 `OPENCODE.md` / `AGENTS.md` 등을 쓸 수 있음)
-- [ ] `[STACK]` 변수 전파 매커니즘 — opencode 에서 spawn 시 context 변수 전달 방식 확인
+- [ ] `.opencode/agents/` 15개 파일 (L1 4 + L2 11) frontmatter 유효 (`name`, `description`, `mode`, `model`)
+- [ ] 모든 agent `mode: subagent` (orchestrator 가 `task()` 로 호출). 직접 대화용이 필요하면 하나만 `mode: primary`
+- [ ] `model` 이 `ABCLab/[KTDS] Qwen3.6-*` (또는 사내 provider 형식)
+- [ ] `.opencode/` 디렉터리 전부 복수형 (`agents`/`skills`/`commands`/`rules`/`plugins`)
+- [ ] `.claude/settings.json` 미생성 (opencode 는 plugin 사용)
+- [ ] `.opencode/plugins/harness-rules.js` 존재 + 재시작 후 응답에 규칙(caveman 등) 반영
+- [ ] orchestrator skill 트리거 시 planner/implementer/reviewer/qa 가 `task()` 로 호출됨 (내장 Worker fallback 아님)
+- [ ] 본문 `Agent(...)` → `task(subagent_type="<실제 이름>", load_skills=[...])` 변환 확인 (`subagent_type="general-purpose"` 가 아닌 실제 agent 이름)
+- [ ] Phase 3 팬아웃이 같은 응답에서 N개 `task()` 동시 호출 가능
+- [ ] commands 10개 (multi-* / gan-design / update-* / test-coverage 등) `.opencode/commands/` 등록
+- [ ] `docs/rules/` 가 LLM 컨텍스트로 로딩되는지 확인
+- [ ] 진입 문서 인식 확인 (사내 fork 가 `CLAUDE.md` / `AGENTS.md` 중 무엇을 읽는지)
 
 ### 2-6. 사내 fork 차이 검토 가이드
 
 사내 fork 사용 중이면 다음을 사내 문서로 확인:
 
-1. **에이전트·명령 디렉토리 경로** — `.opencode/agent/` 와 다를 수 있음
-2. **frontmatter 필수 필드** — `mode`, `model`, `tools` 외 사내 확장 키
-3. **에이전트 spawn API** — 호출 함수명·파라미터 시그니처
-4. **훅 시스템** — 지원 이벤트명·페이로드 스키마
-5. **진입 문서명** — `CLAUDE.md` / `OPENCODE.md` / `AGENTS.md` 등
-6. **spec-kit 호환성** — 별도 구현체 / 대체 도구 / 미지원
-7. **model id 형식** — `[KTDS] Qwen3.6-27B-FP8` 형식 수용 여부
+1. **디렉터리 경로** — `.opencode/agents/` 등 복수형 규약 (devai 는 복수형)
+2. **frontmatter 필수 필드** — `name`(devai 필수), `mode`, `model` 외 확장 키
+3. **subagent 호출** — `task(subagent_type=..., load_skills=[...])` 시그니처. 내장 화이트리스트(`call_devai_agent`) 와 custom agent(`task`) 구분
+4. **plugin 시스템** — hook 이벤트명 (`experimental.chat.system.transform`, `tool.execute.before`), plugin 디렉터리(`.opencode/plugins/`)
+5. **진입 문서명** — `CLAUDE.md` / `OPENCODE.md` / `AGENTS.md`
+6. **spec-kit 호환성** — `.specify/` 동작 / 대체 / 미지원
+7. **model id 형식** — `ABCLab/[KTDS] Qwen3.6-*` 수용 여부
 
 ---
 
