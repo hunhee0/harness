@@ -305,14 +305,7 @@ copy_dir  ".claude/rules"               "ECC 부속 규칙"
 # opencode 후처리 (디렉토리 복사 직후, settings.json 복사 전)
 if $OPENCODE && ! $DRY_RUN; then
     convert_agent_frontmatter "$TARGET_DIR/.opencode/agents"
-    # devai 의 task() subagent resolution 은 .claude/agents/ 를 읽는다
-    # (devai.js: mergeWithClaudeCodeAgents -> loadProjectAgents).
-    # 등록·@멘션(/agents 목록)은 .opencode/agents/ 를 읽는다.
-    # 두 경로 모두 필요하므로 변환 완료된 agent 를 .claude/agents/ 에도 사본 배치.
-    rm -rf "$TARGET_DIR/.claude/agents"
-    mkdir -p "$TARGET_DIR/.claude/agents"
-    cp -r "$TARGET_DIR/.opencode/agents/." "$TARGET_DIR/.claude/agents/"
-    echo "  ✓ Opencode 후처리 (agent frontmatter + .claude/agents task-resolution 사본)"
+    echo "  ✓ Opencode 후처리 (agent frontmatter)"
 fi
 
 copy_file ".claude/settings.json"

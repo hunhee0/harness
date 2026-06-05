@@ -284,15 +284,7 @@ Copy-HarnessDir ".claude\rules"  "ECC reference rules"
 if ($Opencode -and -not $DryRun) {
     $agentTarget = Join-Path $TargetDir ".opencode\agents"
     Convert-AgentFrontmatter $agentTarget
-    # devai 의 task() subagent resolution 은 .claude/agents/ 를 읽는다
-    # (devai.js: mergeWithClaudeCodeAgents -> loadProjectAgents).
-    # 등록·@멘션(/agents 목록)은 .opencode/agents/ 를 읽는다.
-    # 두 경로 모두 필요하므로 변환 완료된 agent 를 .claude/agents/ 에도 사본 배치.
-    $claudeAgents = Join-Path $TargetDir ".claude\agents"
-    if (Test-Path $claudeAgents) { Remove-Item -Recurse -Force $claudeAgents }
-    New-Item -ItemType Directory -Force -Path $claudeAgents | Out-Null
-    Copy-Item -Path (Join-Path $agentTarget "*") -Destination $claudeAgents -Recurse -Force
-    Write-Host "  [OK] Opencode post-process (agent frontmatter + .claude/agents task-resolution copy)" -ForegroundColor Green
+    Write-Host "  [OK] Opencode post-process (agent frontmatter)" -ForegroundColor Green
 }
 
 # settings.json -> .claude/settings.json (default) OR .opencode/settings.json (-Opencode)
