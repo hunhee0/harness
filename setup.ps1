@@ -9,7 +9,7 @@
 #       - .claude/skills   -> .opencode/skills   (kept as its own folder; SKILL.md preserved)
 #       - .claude/commands -> .opencode/commands (복수 유지)
 #       - .claude/rules    -> .opencode/rules    (복수 유지)
-#       - .claude/settings.json -> .opencode/settings.json
+#       - .claude/settings.json: opencode 옵션 시 미복사 (hook 은 plugin 으로 대체)
 #       - Content references rewritten with same prefix-only mapping (.claude -> .opencode)
 #       - Agent(subagent_type=..., description=X, prompt=Y) -> opencode task tool 호출 텍스트 자동 변환
 #       - AskUserQuestion -> STOP(텍스트 응답 대기) 자동 변환
@@ -257,7 +257,7 @@ if ($Opencode) {
     Write-Host "    .claude/skills   -> .opencode/skills   (kept as its own folder; SKILL.md preserved)" -ForegroundColor Cyan
     Write-Host "    .claude/commands -> .opencode/commands (복수 유지)" -ForegroundColor Cyan
     Write-Host "    .claude/rules    -> .opencode/rules    (복수 유지)" -ForegroundColor Cyan
-    Write-Host "    .claude/settings.json -> .opencode/settings.json" -ForegroundColor Cyan
+    Write-Host "    .claude/settings.json    미복사 (opencode 는 plugin 사용)" -ForegroundColor Cyan
 }
 Write-Host ""
 
@@ -296,25 +296,21 @@ if ($Opencode -and -not $DryRun) {
     }
 }
 
-# settings.json -> .claude/settings.json (default) OR .opencode/settings.json (-Opencode)
-$settingsSrc = Join-Path $SourceDir ".claude\settings.json"
-if (Test-Path $settingsSrc) {
-    if ($Opencode) {
-        $settingsDest    = Join-Path $TargetDir ".opencode\settings.json"
-        $settingsDestRel = ".opencode\settings.json"
-    } else {
+# settings.json -> .claude/settings.json (일반 모드 전용)
+# opencode 옵션 시엔 settings.json 미사용 (hook 은 plugin 으로 대체) — 복사 skip.
+if (-not $Opencode) {
+    $settingsSrc = Join-Path $SourceDir ".claude\settings.json"
+    if (Test-Path $settingsSrc) {
         $settingsDest    = Join-Path $TargetDir ".claude\settings.json"
         $settingsDestRel = ".claude\settings.json"
-    }
 
-    if ($DryRun) {
-        Write-Host "  [DRY RUN] $settingsDestRel" -ForegroundColor Gray
-    } else {
-        New-Item -ItemType Directory -Force -Path (Split-Path $settingsDest) | Out-Null
-        Copy-Item $settingsSrc $settingsDest -Force
-        Convert-ContentForOpencode $settingsDest
-
-        Write-Host "  [OK] settings ($settingsDestRel)" -ForegroundColor Green
+        if ($DryRun) {
+            Write-Host "  [DRY RUN] $settingsDestRel" -ForegroundColor Gray
+        } else {
+            New-Item -ItemType Directory -Force -Path (Split-Path $settingsDest) | Out-Null
+            Copy-Item $settingsSrc $settingsDest -Force
+            Write-Host "  [OK] settings ($settingsDestRel)" -ForegroundColor Green
+        }
     }
 }
 
@@ -388,7 +384,7 @@ if ($Opencode) {
     Write-Host "    [auto] AskUserQuestion -> STOP(텍스트 응답 대기) 로 변환 완료" -ForegroundColor Green
     Write-Host "    [auto] .claude/{agents,skills,commands,rules} -> .opencode/{agents,skills,commands,rules} (복수 유지) 경로 변환 완료" -ForegroundColor Green
     Write-Host "    a) /Skill(...) 같은 그 외 Claude Code 전용 도구 호출이 있으면 사내 fork 의 등가 표기로 수동 치환 필요" -ForegroundColor Cyan
-    Write-Host "    b) .opencode/settings.json has hook keys (UserPromptSubmit, etc.) — opencode 는 plugin (.opencode/plugin/*.ts) 사용. settings.json hook 은 무력화됨." -ForegroundColor Cyan
+    Write-Host "    b) hook 은 .opencode/plugins/harness-rules.js (system 규칙 주입) 가 담당. settings.json 은 opencode 에서 미사용." -ForegroundColor Cyan
     Write-Host "    c) Decide which agent should be 'mode: primary' (default: all subagent). Update one frontmatter." -ForegroundColor Cyan
     Write-Host "    d) Verify .opencode/skills/<skill>/ nested structure (SKILL.md kept) with companion files (scripts/) is supported by your fork." -ForegroundColor Cyan
     Write-Host "    e) .opencode/rules/ 디렉터리는 .claude/rules/ 의 ECC 부속 규칙 보존용. opencode 표준은 AGENTS.md 단일 파일 권장 — 필요 시 변환." -ForegroundColor Cyan

@@ -10,7 +10,7 @@
 #       - .claude/skills   -> .opencode/skills   (그대로 유지; SKILL.md 보존)
 #       - .claude/commands -> .opencode/commands (복수 유지)
 #       - .claude/rules    -> .opencode/rules    (복수 유지)
-#       - .claude/settings.json -> .opencode/settings.json
+#       - .claude/settings.json: opencode 옵션 시 미복사 (hook 은 plugin 으로 대체)
 #       - 본문 내 .claude 경로 참조는 prefix 만 .opencode 로 치환 (디렉터리명 보존)
 #       - Agent(...) -> opencode `task` tool 호출 텍스트 자동 변환
 #       - AskUserQuestion -> STOP(텍스트 응답 대기) 자동 변환
@@ -290,7 +290,7 @@ if $OPENCODE; then
     echo "    .claude/skills   -> .opencode/skills   (그대로 유지; SKILL.md 보존)"
     echo "    .claude/commands -> .opencode/commands (복수 유지)"
     echo "    .claude/rules    -> .opencode/rules    (복수 유지)"
-    echo "    .claude/settings.json -> .opencode/settings.json"
+    echo "    .claude/settings.json    미복사 (opencode 는 plugin 사용)"
 fi
 echo ""
 
@@ -315,7 +315,8 @@ if $OPENCODE && ! $DRY_RUN; then
     fi
 fi
 
-copy_file ".claude/settings.json"
+# settings.json: 일반 모드 전용. opencode 옵션 시엔 미사용(hook 은 plugin 으로 대체) — skip.
+$OPENCODE || copy_file ".claude/settings.json"
 copy_dir  "docs/rules"                  "규칙 파일"
 copy_dir  ".specify/templates"          ".specify 템플릿"
 copy_dir  ".specify/scripts"            ".specify 스크립트"
@@ -341,7 +342,7 @@ if $OPENCODE; then
     echo "    [auto] .claude/{agents,skills,commands,rules} -> .opencode/{agents,skills,commands,rules} (복수 유지) 경로 자동 변환"
     echo ""
     echo "    a) /Skill(...) 같은 그 외 Claude Code 전용 도구 호출이 있으면 사내 fork 등가 표기로 수동 치환 필요"
-    echo "    b) .opencode/settings.json 의 훅 키 (UserPromptSubmit 등) — opencode 는 plugin (.opencode/plugin/*.ts) 사용. settings.json hook 은 무력화됨"
+    echo "    b) hook 은 .opencode/plugins/harness-rules.js (system 규칙 주입) 가 담당. settings.json 은 opencode 에서 미사용"
     echo "    c) primary agent 지정: 기본은 모두 subagent. 한 agent의 frontmatter 를 mode: primary 로 변경"
     echo "    d) .opencode/skills/<skill>/ 의 nested 구조 (SKILL.md 보존) + 보조 파일 (scripts/) — 사내 fork 지원 여부 확인"
     echo "    e) .opencode/rules/ 는 .claude/rules/ 의 ECC 부속 규칙 보존용. opencode 표준은 AGENTS.md 단일 파일 권장 — 필요 시 변환"
