@@ -6,7 +6,7 @@
 #   ./setup.sh ../my-project --dry-run
 #   ./setup.sh ../my-project --opencode
 #     ↳ opencode 자동 변환:
-#       - .claude/agents   -> .opencode/agents   (복수 유지 + frontmatter: name/color 제거, mode: subagent, model→KTDS Qwen, tools 배열 라인 제거)
+#       - .claude/agents   -> .opencode/agents   (복수 유지 + frontmatter: name 보존, color 제거, mode: subagent, model→KTDS Qwen, tools 배열 라인 제거)
 #       - .claude/skills   -> .opencode/skills   (그대로 유지; SKILL.md 보존)
 #       - .claude/commands -> .opencode/commands (복수 유지)
 #       - .claude/rules    -> .opencode/rules    (복수 유지)

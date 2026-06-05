@@ -5,7 +5,7 @@
 #   .\setup.ps1 -TargetDir "../my-project" -DryRun
 #   .\setup.ps1 -TargetDir "../my-project" -Opencode
 #     ↳ Full opencode adaptation:
-#       - .claude/agents   -> .opencode/agents   (복수 유지 + frontmatter: drop name/color, add mode: subagent, map model->KTDS Qwen, drop tools array line)
+#       - .claude/agents   -> .opencode/agents   (복수 유지 + frontmatter: keep name, drop color, add mode: subagent, map model->KTDS Qwen, drop tools array line)
 #       - .claude/skills   -> .opencode/skills   (kept as its own folder; SKILL.md preserved)
 #       - .claude/commands -> .opencode/commands (복수 유지)
 #       - .claude/rules    -> .opencode/rules    (복수 유지)
