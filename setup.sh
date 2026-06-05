@@ -163,10 +163,11 @@ ktds_model_for() {
     esac
 }
 
-# Agent .md frontmatter 정리 (opencode 양식):
-#   - name:/color: 라인 제거 (opencode 무관 필드)
+# Agent .md frontmatter 정리 (opencode/devai 양식):
+#   - name: 보장 (devai fork 필수 필드 — 원본 유지, 없으면 파일명으로 frontmatter 최상단 삽입)
+#   - color: 라인 제거 (opencode agent frontmatter 에 color 필드 없음)
 #   - mode: subagent 추가 (없으면) — description 다음 줄
-#   - tools: [..] 배열 라인 제거 (opencode 는 tools 를 record 로 기대 — 미지정 시 기본 도구 상속)
+#   - tools: [..] 배열 라인 제거 (opencode 는 tools 를 record/list 로 기대 — 미지정 시 기본 도구 상속)
 #   - model: KTDS 모델로 매핑/삽입 (claude 모델 미지원)
 convert_agent_frontmatter() {
     local agent_dir="$1"
@@ -191,8 +192,11 @@ convert_agent_frontmatter() {
         base="$(basename "$f" .md)"
         model="$(ktds_model_for "$base")"
 
-        # name: 라인 제거 (frontmatter 영역 가정)
-        _sed_i '/^name:[[:space:]]/d' "$f"
+        # name: 보장 (devai fork 필수 필드). 원본 name 유지, 없으면 파일명으로
+        # frontmatter 최상단(첫 --- 다음)에 삽입.
+        if ! grep -qE '^name:[[:space:]]*[^[:space:]]' "$f"; then
+            awk -v nm="$base" 'NR==1 && /^---$/{print; print "name: " nm; next} {print}' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+        fi
         # color: 라인 제거 (opencode agent frontmatter 에 color 필드 없음)
         _sed_i '/^color:[[:space:]]/d' "$f"
         # tools: [..] 배열 라인 제거

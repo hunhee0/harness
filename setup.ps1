@@ -137,11 +137,12 @@ $AgentModelMap = @{
 }
 
 function Convert-AgentFrontmatter {
-    # Cleanup agent .md frontmatter for opencode:
-    #   - remove `name:` and `color:` lines (no opencode equivalent)
+    # Cleanup agent .md frontmatter for opencode/devai:
+    #   - ensure `name:` line (devai fork requires it; keep original or insert filename)
+    #   - remove `color:` line (no opencode equivalent)
     #   - add `mode: subagent` after `description:` if missing
     #   - map `model:` to a KTDS Qwen model per $AgentModelMap (insert if absent)
-    #   - remove the inline `tools: [..]` array line (opencode wants a record, not an array)
+    #   - remove the inline `tools: [..]` array line (opencode wants a record/list, not an array)
     param([string]$AgentDir)
     if (-not $Opencode -or -not (Test-Path $AgentDir)) { return }
 
@@ -154,9 +155,10 @@ function Convert-AgentFrontmatter {
         # Only operate on files with frontmatter block
         if ($content -notmatch '(?s)^---\r?\n.*?\r?\n---\r?\n') { return }
 
-        # Remove `name:` line
-        if ($content -match '(?m)^name:\s*[^\r\n]+\r?\n') {
-            $content = $content -replace '(?m)^name:\s*[^\r\n]+\r?\n', ''
+        # Ensure `name:` line (devai fork 필수 필드). 원본 name 유지,
+        # 없으면 파일명으로 frontmatter 최상단(첫 --- 다음)에 삽입.
+        if ($content -notmatch '(?m)^name:\s*\S') {
+            $content = $content -replace '^(---\r?\n)', "`$1name: $($_.BaseName)`r`n"
             $modified = $true
         }
 
