@@ -339,70 +339,11 @@ Agent(
 
 ## 에러 핸들링
 
-**원칙**: 1회 재시도 → 재실패 시 해당 결과 없이 진행 + 사용자에게 누락 명시.
-
-| 상황 | 조치 |
-|------|------|
-| 에이전트 1회 실패 | 컨텍스트 보강하여 1회 재시도 |
-| 에이전트 2회 실패 | 에스컬레이션: 사용자에게 현상 + 옵션 (스코프 축소 / 분해 / 중단) 제시 |
-| 한 Phase 전체 실패 | 후속 Phase 진행 중단, 누락 명시하여 보고 |
-| 상충 산출물 | 삭제 금지 — 출처 병기하여 보존 |
-| Phase 2-4 루프 3회 초과 | 즉시 사용자 에스컬레이션 |
-
+원칙: 에이전트 1회 실패 → 컨텍스트 보강 후 1회 재시도. 2회 실패 또는 Phase 2-4 루프 3회 초과 → 사용자 에스컬레이션(스코프 축소 / 태스크 분해 / 중단). 한 Phase 전체 실패 → 후속 중단·누락 보고. 상충 산출물은 삭제 금지(출처 병기 보존).
 상세: `docs/rules/07-error-recovery.md`
 
 ---
 
-## 출력 스타일 (caveman 경계)
+## 출력 스타일
 
-사용자 보고 출력 시 caveman lite 적용 **제외**:
-- Phase 시작·종료 알림
-- 사용자 확인 요청 (옵션 포함)
-- 진행 산출물 diff/요약 보고
-- 에러 에스컬레이션 메시지
-
-이유: `CLAUDE.md` Rule 8의 "변경 diff/요약 / question 옵션" 예외 조항에 해당.
-내부 에이전트 간 통신은 정상 처리.
-
----
-
-## 테스트 시나리오
-
-**정상 흐름 (FastAPI 로그인 신규)**:
-"사용자 로그인 기능 만들어줘"
-→ Phase 0: `docs/specs/` 없음 → 신규
-→ Phase 0.5: `pyproject.toml` + FastAPI 임포트 → `[STACK]=python-fastapi`
-→ Phase 1a: /speckit-specify → spec.md → 🚦 GATE 1 (사용자 확인)
-→ Phase 1b: /speckit-plan → plan.md → 🚦 GATE 2 (사용자 확인)
-→ Phase 1c: /speckit-tasks → tasks.md → 🚦 GATE 3 BLOCKING (사용자 확인)
-→ Phase 2: implementer가 /speckit-implement 실행 (ecc/fastapi-patterns·ecc/python-testing 참조, TDD)
-→ Phase 3-1: reviewer (스펙 준수 검증, 통과)
-→ Phase 3-2: 팬아웃 3개 병렬 — fastapi-reviewer + security-reviewer (auth 키워드) + code-reviewer
-→ Phase 3-3: reviewer 통합 (dedupe → 통과)
-→ Phase 4: qa (verification-before-completion 체크, 통과)
-→ Phase 5: changelog + doc-updater + PR 준비 → 완료
-
-**에러 흐름 (팬아웃 다관점 보안 지적)**:
-Phase 3-2 fastapi-reviewer는 LOW, security-reviewer는 CRITICAL(SQL 인젝션) 보고
-→ reviewer 통합: CRITICAL 1개 → 블로킹
-→ implementer 재호출 (security-reviewer 리포트만 우선) → 수정 → Phase 3 재진입 → 통과 → qa
-
-**큰 기능 + 팬아웃 (Phase 1)**:
-"결제 시스템 만들어줘" (spec 페이지 8개 예상)
-→ Phase 0.5: `[STACK]=python-fastapi + ts-next` (풀스택)
-→ Phase 1: planner가 팬아웃 트리거 충족 인식 → architect ×2 (모놀리스 vs 분리) + code-architect 병렬 → trade-off 표 → 사용자 선택 → 선택안만 plan.md
-→ Phase 2 이하 동일
-
-**재개 흐름**:
-"이어서 진행"
-→ Phase 0: `tasks.md`에 `[ ]` 5개 발견 → 재개
-→ Phase 0.5: 이전 spec.md 헤더의 [STACK] 재사용
-→ Phase 2 진입 (planner 우회) → 이하 동일
-
-**부분 재실행 흐름**:
-"reviewer가 지적한 보안 이슈만 수정해줘"
-→ Phase 0: 모든 `[x]` 이나 사용자 명시 수정 요청 → 부분 재실행
-→ implementer만 호출 (security-reviewer 리포트 기반 해당 파일 수정) → Phase 3 (security-reviewer만 재호출 → 통과) → qa
-
-**3회 초과 에스컬레이션**:
-Phase 2-4 루프 3회 후에도 통과 못함 → 사용자에게 현상 + 옵션 (스코프 축소 / 태스크 분해 / 임시 중단) 제시
+caveman 출력 규칙은 `CLAUDE.md` Rule 8 + opencode plugin(`harness-rules.js`)이 담당. 게이트(사용자 확인)·진행 diff/요약·에러 에스컬레이션은 정상 문장으로 작성(caveman 예외). 내부 에이전트 간 통신은 정상 처리.
