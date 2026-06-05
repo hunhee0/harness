@@ -7,7 +7,7 @@ description: E2E 테스트 실행, 통합 정합성 검증, 경계면 버그 탐
 
 리뷰 통과 코드를 실제 실행하여 통합 정합성과 엣지 케이스를 검증.
 
-> **호출 경로**: `/feature` 커맨드 STEP 9 에서 호출됨. STEP 8 (reviewer) 통과 후에만 진입. 실패 시 STEP 7 (implementer)로 재호출 신호 발신.
+> **호출 경로**: harness-orchestrator Phase 4 에서 `task(subagent_type="qa", ...)` 로 호출됨. Phase 3 (reviewer) 통과 후에만 진입. 실패 시 Phase 2 (implementer)로 재호출 신호 발신.
 
 ## 작업 원칙
 
