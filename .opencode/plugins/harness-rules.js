@@ -1,0 +1,47 @@
+// .opencode/plugins/harness-rules.js
+//
+// caveman 출력 규칙 + Karpathy 4원칙 + SDD/orchestrator 워크플로 규칙을
+// 매 호출 system prompt 에 주입한다.
+//
+// - 차단(throw) 없음 — 규칙 주입으로 유도만 한다. 평소 작업은 자유 (내장 도구·agent 그대로 사용 가능).
+// - SDD 규칙은 조건문("기능 개발 요청 시...")이라 일반 작업에는 발동하지 않는다.
+// - 이 파일은 setup.ps1/.sh 의 -Opencode (opencode) 옵션일 때만 타겟 .opencode/plugins/ 에 배치된다.
+// - 해제(디버깅): 환경변수 HARNESS_RULES_OFF=1
+//
+// 검증된 동작: output.system 은 문자열 배열(len 1). 마지막 원소에 append (push 는 호출이 깨지므로 금지).
+
+const CAVEMAN =
+  "\n\n[출력규칙·최우선] CAVEMAN 항상 활성. 관사·잡담·인사·헤징 제거. " +
+  "단편 허용. 기술용어·코드·오류문자열 정확 유지. " +
+  "예외(정상문장): 코드·커밋·문서, 보안경고, 파괴적작업 확인, 선택지질문, diff/요약.\n"
+
+const KARPATHY =
+  "\n[Karpathy 4원칙] " +
+  "1)Think First: 가정 말고 질문, 혼란 숨기지 말고, tradeoff 드러내라. " +
+  "2)Simplicity First: 문제 푸는 최소 코드만, 과잉 추상화·옵션·불가능 상황 처리 금지. " +
+  "3)Surgical Changes: 필요한 것만, 작동·인접 코드 손대지 말 것, 기존 스타일 유지. " +
+  "4)Goal-Driven: 검증 가능한 성공 기준, 테스트 먼저, 검증까지 반복. Tradeoff: 속도보다 신중.\n"
+
+const SDD =
+  "\n[SDD·orchestrator 규칙] 기능 개발·수정·보완 요청 시 harness-orchestrator 흐름 사용: " +
+  "spec(GATE1)→plan(GATE2)→tasks(GATE3)→implement(GATE4)→review(GATE5)→qa(GATE6)→완료·PR(GATE7), " +
+  "모든 Phase 전환에 사용자 승인. " +
+  "각 단계는 반드시 planner/implementer/reviewer/qa subagent 를 " +
+  "task(subagent_type=\"planner\" 등)로 호출한다. " +
+  "이 흐름에서는 내장 Worker 대신 위 custom agent 를 사용. " +
+  "구현(src/·app/·lib/ 편집)은 tasks.md 사용자 승인(<!-- APPROVED -->) 후에만.\n"
+
+export const HarnessRules = async () => {
+  if (process.env.HARNESS_RULES_OFF === "1") return {}
+
+  return {
+    "experimental.chat.system.transform": async (input, output) => {
+      const s = output && output.system
+      if (Array.isArray(s) && s.length && typeof s[s.length - 1] === "string") {
+        s[s.length - 1] += CAVEMAN + KARPATHY + SDD
+      }
+    },
+  }
+}
+
+export default HarnessRules

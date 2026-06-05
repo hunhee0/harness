@@ -13,6 +13,7 @@
 #       - Content references rewritten with same prefix-only mapping (.claude -> .opencode)
 #       - Agent(subagent_type=..., description=X, prompt=Y) -> opencode task tool 호출 텍스트 자동 변환
 #       - AskUserQuestion -> STOP(텍스트 응답 대기) 자동 변환
+#       - .opencode/plugins/harness-rules.js 배치 (opencode 옵션일 때만 — system 규칙 주입 plugin)
 #       - opencode 공식 표준 + devai fork 모두 복수형 (agents, skills, commands, rules, plugins) 사용
 
 param(
@@ -285,6 +286,14 @@ if ($Opencode -and -not $DryRun) {
     $agentTarget = Join-Path $TargetDir ".opencode\agents"
     Convert-AgentFrontmatter $agentTarget
     Write-Host "  [OK] Opencode post-process (agent frontmatter)" -ForegroundColor Green
+    # opencode 전용 plugin 배치 (opencode 옵션일 때만 생성)
+    $pluginSrc = Join-Path $SourceDir ".opencode\plugins"
+    if (Test-Path $pluginSrc) {
+        $pluginDest = Join-Path $TargetDir ".opencode\plugins"
+        New-Item -ItemType Directory -Force -Path $pluginDest | Out-Null
+        Copy-Item -Path (Join-Path $pluginSrc "*") -Destination $pluginDest -Recurse -Force
+        Write-Host "  [OK] opencode plugin (.opencode/plugins/harness-rules.js)" -ForegroundColor Green
+    }
 }
 
 # settings.json -> .claude/settings.json (default) OR .opencode/settings.json (-Opencode)

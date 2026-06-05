@@ -14,6 +14,7 @@
 #       - 본문 내 .claude 경로 참조는 prefix 만 .opencode 로 치환 (디렉터리명 보존)
 #       - Agent(...) -> opencode `task` tool 호출 텍스트 자동 변환
 #       - AskUserQuestion -> STOP(텍스트 응답 대기) 자동 변환
+#       - .opencode/plugins/harness-rules.js 배치 (opencode 옵션일 때만 — system 규칙 주입 plugin)
 #       - opencode 공식 표준 + devai fork 모두 복수형 디렉터리 (agents, skills, commands, rules, plugins) 사용
 
 set -euo pipefail
@@ -306,6 +307,12 @@ copy_dir  ".claude/rules"               "ECC 부속 규칙"
 if $OPENCODE && ! $DRY_RUN; then
     convert_agent_frontmatter "$TARGET_DIR/.opencode/agents"
     echo "  ✓ Opencode 후처리 (agent frontmatter)"
+    # opencode 전용 plugin 배치 (opencode 옵션일 때만 생성)
+    if [[ -d "$SOURCE_DIR/.opencode/plugins" ]]; then
+        mkdir -p "$TARGET_DIR/.opencode/plugins"
+        cp -r "$SOURCE_DIR/.opencode/plugins/." "$TARGET_DIR/.opencode/plugins/"
+        echo "  ✓ opencode plugin (.opencode/plugins/harness-rules.js)"
+    fi
 fi
 
 copy_file ".claude/settings.json"
