@@ -95,15 +95,19 @@ LLM 기반 코딩 에이전트는 **모델 능력만큼이나 "하네스(harness
 다른 프로젝트에 이 하네스를 빠르게 복사하거나, opencode 환경으로 변환할 때는 다음 스크립트·가이드 사용:
 
 ```powershell
-# Windows
+# Windows — Claude Code
 .\setup.ps1 -TargetDir "C:\path\to\new-project"
+# Windows — opencode/devai
+.\setup.ps1 -TargetDir "C:\path\to\new-project" -Opencode
 
-# Mac / Linux
+# Mac / Linux — Claude Code
 ./setup.sh /path/to/new-project
+# Mac / Linux — opencode/devai
+./setup.sh /path/to/new-project --opencode
 ```
 
 - **Claude Code 환경**: 자동 복사 (에이전트·스킬·규칙·Speckit 자원·훅)
-- **opencode 환경**: 디렉토리 매핑 + frontmatter 변환 + 스킬→command 변환 필요
+- **opencode/devai 환경 (`-Opencode` / `--opencode`)**: 자동 변환 — 디렉터리 `.opencode/*`(복수형 유지), frontmatter(name 보존·`mode: subagent`·`ABCLab/[KTDS]` model), 본문 `Agent()→task()`(+load_skills)·`AskUserQuestion→STOP`, `.opencode/plugins/harness-rules.js` plugin 배치, `settings.json` 제외(hook 은 plugin 대체)
 - **이식 후 수정 필수**: `CLAUDE.md`, `.specify/memory/constitution.md`, `docs/rules/01-project-structure.md`
 
 상세 (DryRun, 트러블슈팅, opencode 매핑표 등): **`docs/INSTALL.md`**
