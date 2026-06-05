@@ -68,19 +68,34 @@ function Convert-ContentForOpencode {
 
     $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
-    # Agent(...) -> opencode `task` tool 호출 텍스트.
-    # opencode 공식: agent 본문에서 subagent 를 task tool 로 호출. 이름은 @ prefix 없이.
-    # Claude Code 의 Agent(subagent_type="general-purpose", description=X, prompt=Y) 패턴을
-    # opencode 친화적인 텍스트로 변환하여 LLM 이 task tool 호출로 매핑하도록 유도.
+    # Agent(...) -> opencode/devai `task(...)` 호출로 변환.
+    # devai task 시그니처: task(subagent_type="<name>", load_skills=[...], description="...", prompt="...")
+    #   - subagent_type: prompt 안의 .../agents/<name>.md 에서 실제 agent 이름 추출
+    #     (devai 는 general-purpose 가 아니라 실제 등록된 agent 이름을 요구)
+    #   - load_skills: agent 별 기본 skill 자동 주입 ($AgentSkillMap)
     # Triple-quote ("""...""") 양식 먼저 (더 구체적), 그 다음 단일 quote 양식.
     $agentPatternTriple = '(?s)Agent\(\s*subagent_type="[^"]*",\s*description="([^"]+)",\s*prompt="""([\s\S]+?)"""\s*\)'
     $agentPatternSingle = '(?s)Agent\(\s*subagent_type="[^"]*",\s*description="([^"]+)",\s*prompt="([^"]+)"\s*\)'
-    $agentReplacement = @'
-`task` 도구로 subagent 호출:
-  description: "$1"
-  prompt: |
-$2
-'@
+
+    # agent 이름 -> load_skills 기본값 (devai skill id 는 .opencode/skills/<id>/ 디렉터리명).
+    # 핵심 SDD 워크플로 agent 만 정적 매핑. 나머지는 빈 배열 (prompt 의 skill 참조 지시로 보완).
+    $AgentSkillMap = @{
+        'planner'     = '"speckit-specify", "speckit-plan", "speckit-tasks"'
+        'implementer' = '"speckit-implement"'
+    }
+
+    $taskEvaluator = [System.Text.RegularExpressions.MatchEvaluator]{
+        param($m)
+        $desc = $m.Groups[1].Value
+        $prm  = $m.Groups[2].Value
+        $name = 'general-purpose'
+        $nm = [regex]::Match($prm, 'agents[\\/]([\w-]+)\.md')
+        if ($nm.Success) { $name = $nm.Groups[1].Value }
+        $skills = ''
+        if ($AgentSkillMap.ContainsKey($name)) { $skills = $AgentSkillMap[$name] }
+        "task(`r`n  subagent_type=`"$name`",`r`n  load_skills=[$skills],`r`n  description=`"$desc`",`r`n  prompt=`"$prm`"`r`n)"
+    }
+    $reSingleline = [System.Text.RegularExpressions.RegexOptions]::Singleline
 
     foreach ($f in $files) {
         if ($TextExtensions -notcontains $f.Extension.ToLower()) { continue }
@@ -100,9 +115,10 @@ $2
         # bare ".claude" (끝/구분자 없음) 도 처리
         $new = $new -replace '\.claude',        '.opencode'
 
-        # 2) Agent(...) tool 호출 -> opencode task tool 호출 텍스트
-        $new = $new -replace $agentPatternTriple, $agentReplacement
-        $new = $new -replace $agentPatternSingle, $agentReplacement
+        # 2) Agent(...) -> task(...) 변환 (subagent_type 추출 + load_skills 주입).
+        #    경로 변환(.opencode/agents/<name>.md) 후이므로 evaluator 가 이름 추출 가능.
+        $new = [regex]::Replace($new, $agentPatternTriple, $taskEvaluator, $reSingleline)
+        $new = [regex]::Replace($new, $agentPatternSingle, $taskEvaluator, $reSingleline)
 
         # 3) AskUserQuestion -> STOP+텍스트 fallback (opencode 등가 도구 없음)
         $new = $new -replace '`AskUserQuestion`', 'STOP(텍스트로 사용자에게 옵션 제시 후 응답 대기)'
@@ -119,21 +135,21 @@ $2
 #                                     (pattern-based language reviewers, loop monitoring, docs).
 # Values are pre-quoted so the leading "[" stays a YAML string, not a flow sequence.
 $AgentModelMap = @{
-    'architect'           = '"[KTDS] Qwen3.6-27B-FP8"'
-    'code-architect'      = '"[KTDS] Qwen3.6-27B-FP8"'
-    'security-reviewer'   = '"[KTDS] Qwen3.6-27B-FP8"'
-    'tdd-guide'           = '"[KTDS] Qwen3.6-27B-FP8"'
-    'planner'             = '"[KTDS] Qwen3.6-27B-FP8"'
-    'implementer'         = '"[KTDS] Qwen3.6-27B-FP8"'
-    'reviewer'            = '"[KTDS] Qwen3.6-27B-FP8"'
-    'qa'                  = '"[KTDS] Qwen3.6-27B-FP8"'
-    'code-reviewer'       = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
-    'python-reviewer'     = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
-    'java-reviewer'       = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
-    'typescript-reviewer' = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
-    'fastapi-reviewer'    = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
-    'loop-operator'       = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
-    'doc-updater'         = '"[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'architect'           = '"ABCLab/[KTDS] Qwen3.6-27B-FP8"'
+    'code-architect'      = '"ABCLab/[KTDS] Qwen3.6-27B-FP8"'
+    'security-reviewer'   = '"ABCLab/[KTDS] Qwen3.6-27B-FP8"'
+    'tdd-guide'           = '"ABCLab/[KTDS] Qwen3.6-27B-FP8"'
+    'planner'             = '"ABCLab/[KTDS] Qwen3.6-27B-FP8"'
+    'implementer'         = '"ABCLab/[KTDS] Qwen3.6-27B-FP8"'
+    'reviewer'            = '"ABCLab/[KTDS] Qwen3.6-27B-FP8"'
+    'qa'                  = '"ABCLab/[KTDS] Qwen3.6-27B-FP8"'
+    'code-reviewer'       = '"ABCLab/[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'python-reviewer'     = '"ABCLab/[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'java-reviewer'       = '"ABCLab/[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'typescript-reviewer' = '"ABCLab/[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'fastapi-reviewer'    = '"ABCLab/[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'loop-operator'       = '"ABCLab/[KTDS] Qwen3.6-35B-A3B-FP8"'
+    'doc-updater'         = '"ABCLab/[KTDS] Qwen3.6-35B-A3B-FP8"'
 }
 
 function Convert-AgentFrontmatter {
@@ -178,7 +194,7 @@ function Convert-AgentFrontmatter {
 
         # Resolve target KTDS model (default to main 27B if filename unmapped)
         $targetModel = $AgentModelMap[$_.BaseName]
-        if (-not $targetModel) { $targetModel = '"[KTDS] Qwen3.6-27B-FP8"' }
+        if (-not $targetModel) { $targetModel = '"ABCLab/[KTDS] Qwen3.6-27B-FP8"' }
 
         # Map existing `model:` line, else insert after `mode: subagent` (or description)
         if ($content -match '(?m)^model:\s*\S') {

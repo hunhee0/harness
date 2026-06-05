@@ -86,7 +86,7 @@ Agent(
 Agent(
   subagent_type="general-purpose",
   description="qa auth module",
-  prompt="[역할] qa 검증 — auth 모듈만.
+  prompt="[역할] .claude/agents/qa.md 정의대로 행동 — auth 모듈만 검증.
   [GOAL] auth 모듈 단위·통합·E2E 실행
   [INPUT] src/auth/*, tests/auth/*, spec.md 의 auth 섹션
   [OUTPUT] 통과·실패 보고서 (재현 경로 포함)
@@ -94,8 +94,24 @@ Agent(
     - 다른 모듈 코드·테스트 건드리지 않음
     - 공유 fixture 변경 금지"
 )
-Agent(... payment module ...)
-Agent(... notification module ...)
+Agent(
+  subagent_type="general-purpose",
+  description="qa payment module",
+  prompt="[역할] .claude/agents/qa.md 정의대로 행동 — payment 모듈만 검증.
+  [GOAL] payment 모듈 단위·통합·E2E 실행
+  [INPUT] src/payment/*, tests/payment/*, spec.md 의 payment 섹션
+  [OUTPUT] 통과·실패 보고서 (재현 경로 포함)
+  [CONSTRAINT] 다른 모듈 코드·테스트·공유 fixture 건드리지 않음"
+)
+Agent(
+  subagent_type="general-purpose",
+  description="qa notification module",
+  prompt="[역할] .claude/agents/qa.md 정의대로 행동 — notification 모듈만 검증.
+  [GOAL] notification 모듈 단위·통합·E2E 실행
+  [INPUT] src/notification/*, tests/notification/*, spec.md 의 notification 섹션
+  [OUTPUT] 통과·실패 보고서 (재현 경로 포함)
+  [CONSTRAINT] 다른 모듈 코드·테스트·공유 fixture 건드리지 않음"
+)
 ```
 
 **통합 (qa 본인)**:

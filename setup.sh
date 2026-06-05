@@ -124,27 +124,40 @@ _rewrite_one() {
     esac
 }
 
-# Agent(...) -> opencode `task` tool 호출 텍스트
-# opencode 공식: agent 본문에서 subagent 를 task tool 로 호출. 이름은 @ prefix 없이.
-# Triple-quote ("""...""") 양식 먼저, 그 다음 단일 quote 양식.
+# Agent(...) -> opencode/devai `task(...)` 호출로 변환.
+# devai task 시그니처: task(subagent_type="<name>", load_skills=[...], description="...", prompt="...")
+#   - subagent_type: prompt 안의 .../agents/<name>.md 에서 실제 agent 이름 추출
+#   - load_skills: agent 별 기본 skill 자동 주입 (planner/implementer 만 정적 매핑)
 # AskUserQuestion -> opencode 등가 도구 없음. STOP+텍스트 fallback.
 rewrite_agent_calls_opencode() {
     local file="$1"
     perl -i -0777 -pe '
+        sub skills_for {
+            my $n = shift;
+            return q{"speckit-specify", "speckit-plan", "speckit-tasks"} if $n eq "planner";
+            return q{"speckit-implement"} if $n eq "implementer";
+            return q{};
+        }
+        sub to_task {
+            my ($d, $p) = @_;
+            my $n = ($p =~ m{agents/([\w-]+)\.md}) ? $1 : "general-purpose";
+            my $s = skills_for($n);
+            return qq{task(\n  subagent_type="$n",\n  load_skills=[$s],\n  description="$d",\n  prompt="$p")};
+        }
         s{
             Agent\(
             \s* subagent_type="[^"]*",
             \s* description="([^"]+)",
             \s* prompt="""([\s\S]+?)"""
             \s* \)
-        }{`task` 도구로 subagent 호출:\n  description: "$1"\n  prompt: |\n$2}gx;
+        }{to_task($1, $2)}gex;
         s{
             Agent\(
             \s* subagent_type="[^"]*",
             \s* description="([^"]+)",
             \s* prompt="([^"]+)"
             \s* \)
-        }{`task` 도구로 subagent 호출:\n  description: "$1"\n  prompt: |\n$2}gx;
+        }{to_task($1, $2)}gex;
         s{`AskUserQuestion`}{STOP(텍스트로 사용자에게 옵션 제시 후 응답 대기)}g;
         s{AskUserQuestion}{STOP(텍스트로 사용자에게 옵션 제시 후 응답 대기)}g;
     ' "$file"
@@ -157,9 +170,9 @@ rewrite_agent_calls_opencode() {
 ktds_model_for() {
     case "$1" in
         code-reviewer|python-reviewer|java-reviewer|typescript-reviewer|fastapi-reviewer|loop-operator|doc-updater)
-            echo '"[KTDS] Qwen3.6-35B-A3B-FP8"' ;;
+            echo '"ABCLab/[KTDS] Qwen3.6-35B-A3B-FP8"' ;;
         *)
-            echo '"[KTDS] Qwen3.6-27B-FP8"' ;;
+            echo '"ABCLab/[KTDS] Qwen3.6-27B-FP8"' ;;
     esac
 }
 

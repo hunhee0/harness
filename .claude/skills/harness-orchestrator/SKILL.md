@@ -86,14 +86,15 @@ Agent(subagent_type="general-purpose", description="...", prompt="...")
 
 ## subagent 호출 형식 (필수)
 
-모든 에이전트 호출은 다음 양식 준수 (Claude Code는 Agent 도구, opencode는 task 도구 — setup 변환이 처리):
+원본은 Claude Code `Agent(...)` 양식으로 작성한다. `setup -Opencode` 변환이
+opencode/devai 의 `task(...)` 호출로 자동 변환한다:
 
 ```
 Agent(
   subagent_type="general-purpose",
   description="<3~5단어 작업 요약>",
   prompt="""
-  [역할] .claude/agents/{agent-name}.md 를 먼저 읽고 그 정의대로 행동할 것.
+  [역할] .claude/agents/<agent-name>.md 를 먼저 읽고 그 정의대로 행동할 것.
 
   [GOAL] <성공 기준>
   [INPUT] <파일 경로 + 컨텍스트>
@@ -104,8 +105,21 @@ Agent(
 )
 ```
 
-- `subagent_type` 은 general-purpose 권장 (qa 포함 모든 에이전트 동일). 에이전트 역할은 prompt 내 `.claude/agents/{name}.md` 참조로 위임
-- `model` 파라미터 미지정 — 사내 로컬 LLM이 기본값으로 적용됨
+**변환 결과 (opencode/devai 실행 형식)**:
+
+```
+task(
+  subagent_type="<agent-name>",
+  load_skills=[<agent 기본 skill>],
+  description="<3~5단어>",
+  prompt="[역할] .opencode/agents/<agent-name>.md ..."
+)
+```
+
+- **subagent_type 결정**: 변환기가 prompt 첫 줄의 `.../agents/<name>.md` 에서 실제 agent 이름을 추출하여 `subagent_type` 에 넣는다. devai 는 `general-purpose` 가 아니라 **실제 등록된 agent 이름**(planner·implementer·reviewer·qa 등)을 요구하므로, **prompt 첫 줄에 `agents/<정확한 이름>.md` 를 반드시 명시**한다.
+- **load_skills 자동 주입**: 변환기가 agent 별 기본 skill 을 채운다 — `planner → speckit-specify/plan/tasks`, `implementer → speckit-implement`. 그 외 agent 는 빈 배열이며, 추가 skill 이 필요하면 호출 시 `load_skills` 에 직접 명시(예: implementer 가 `ecc/python-patterns` 필요 시).
+- **opencode/devai 에서 직접 호출 시**: 위 `task(...)` 형식을 그대로 도구 호출로 실행한다. 텍스트로만 적지 말 것.
+- `model` 파라미터 미지정 — agent frontmatter 의 `model: ABCLab/[KTDS] Qwen...` 이 적용됨
 
 ---
 
