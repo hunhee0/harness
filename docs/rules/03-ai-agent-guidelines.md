@@ -67,7 +67,7 @@
 |---|---|---|
 | `/gan-design` | Generator/Evaluator 디자인 루프 (FE 시각 작업) | implementer가 FE 시안 비교 시 사용 |
 | `/loop-start` | 매니지드 자율 루프 시작 | 안전 기본값·종료 조건 |
-| `/multi-backend`, `/multi-frontend`, `/multi-plan`, `/multi-workflow` | 외부 멀티모델 (Codex/Gemini wrapper) | **현 in-process 파이프라인 미사용** (참조용) |
+| `/multi-backend`, `/multi-frontend`, `/multi-plan`, `/multi-workflow` | 외부 멀티모델 (Codex/Gemini wrapper) | **현 in-process 파이프라인 미사용** (참조용 — `~/.claude/bin/codeagent-wrapper` 외부 도구 필요, 본 레포 미포함) |
 | `/python-review` | python-reviewer agent 직접 호출 | reviewer 외 단독 사용 |
 | `/test-coverage` | 커버리지 분석·갭 식별·누락 테스트 생성 | qa·tdd-guide가 호출 |
 | `/update-codemaps`, `/update-docs` | 코드맵·문서 동기화 | Phase 5에서 doc-updater가 실행 |
@@ -180,10 +180,11 @@
 6. **호출 형식 표준**: 외부 모델 호출(`/multi-*`) 외 모든 in-process 호출은 다음 형식 준수:
 
    ```
+   # 예시는 planner — 호출 대상의 실제 agent 이름으로 치환 (subagent_type + prompt 첫 줄 모두)
    Agent(
-     subagent_type="general-purpose",
+     subagent_type="planner",
      description="<3~5단어>",
-     prompt="[역할] .claude/agents/{name}.md 정의대로 행동.
+     prompt="[역할] .claude/agents/planner.md 정의대로 행동.
      [GOAL] ...
      [INPUT] ... + [STACK]
      [OUTPUT] ...
@@ -191,6 +192,7 @@
    )
    ```
 
-   > opencode/devai 환경: setup `-Opencode` 변환이 위 `Agent(...)` 를 `task(subagent_type="<실제 agent 이름>", load_skills=[...], ...)` 로 자동 변환한다 (prompt 의 `agents/<name>.md` 에서 이름 추출, planner/implementer 는 load_skills 자동 주입). 원본은 Claude Code 형식으로 유지.
+   - `subagent_type` 에는 **실제 agent 이름**을 기재 (Claude Code 가 frontmatter `tools`·`model` 적용). `general-purpose` 사용 금지 (변환기 폴백 전용).
+   > opencode/devai 환경: setup `-Opencode` 변환이 위 `Agent(...)` 를 `task(subagent_type="<실제 agent 이름>", load_skills=[...], ...)` 로 자동 변환한다 (prompt 의 `agents/<name>.md` 에서 이름 재추출, planner/implementer 는 load_skills 자동 주입). 원본은 Claude Code 형식으로 유지.
 
 7. **팬아웃 비용 의식**: 트리거 조건 외 팬아웃 호출 금지. 부분 재실행 시 변경 스택만 호출하여 절약.

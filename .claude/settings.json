@@ -1,11 +1,27 @@
 {
+  "permissions": {
+    "ask": [
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean -fd:*)",
+      "Bash(git branch -D:*)",
+      "PowerShell(Remove-Item -Recurse -Force:*)",
+      "PowerShell(git push --force:*)",
+      "PowerShell(git push -f:*)",
+      "PowerShell(git reset --hard:*)",
+      "PowerShell(git clean -fd:*)",
+      "PowerShell(git branch -D:*)"
+    ]
+  },
   "hooks": {
     "UserPromptSubmit": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "echo [CAVEMAN LITE] [토큰 효율 요청] 잡담/헤징/인사 제거. 단편 허용. 짧은 동의어. 기술 용어 정확. 예외: question 옵션, 변경 diff/요약, 코드/커밋/문서는 정상 작성."
+            "command": "echo [CAVEMAN FULL] [토큰 효율 요청] 잡담/헤징/인사 제거. 단편 허용. 짧은 동의어. 기술 용어 정확. 예외: question 옵션, 변경 diff/요약, 코드/커밋/문서는 정상 작성."
           }
         ]
       }

@@ -15,4 +15,4 @@ paths:
 
 ## 에이전트 지원
 
-- **e2e-runner** - Playwright E2E 테스팅 스페셜리스트
+- **qa** (L1) - E2E·통합 정합성 검증 담당. Playwright E2E는 qa 에이전트가 실행

@@ -1,3 +1,12 @@
+---
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.vue"
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.html"
+---
 > 이 파일은 [common/patterns.md](../common/patterns.md)를 웹 특화 패턴으로 확장한다.
 
 # 웹 패턴 (Web Patterns)

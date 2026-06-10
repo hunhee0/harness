@@ -84,7 +84,7 @@ LLM 기반 코딩 에이전트는 **모델 능력만큼이나 "하네스(harness
 | 1-3줄 핫픽스 다수 → 풀 SDD는 오버헤드 | `CLAUDE.md` Rule 4 예외 기준 사내 맞춤 (예: "1줄 버그 + 회귀 영향 없는 변경"까지 확장) |
 | 기존 테스트 부재 → 80% 커버리지 충족 어려움 | `agents/reviewer.md` 보강: "기존 모듈 면제, **신규/수정 라인만** 80%" |
 | 사내 티켓(Jira/Redmine) 연동 부재 | changelog 파일명에 티켓 ID 포함 (`YYYY-MM-DD-fix-JIRA-1234.md`) |
-| SLA · 시간 압박 | `harness-orchestrator`에 "긴급 핫픽스 모드" 추가 (planner 우회, implementer + reviewer만) |
+| SLA · 시간 압박 | `harness-orchestrator`에 "긴급 핫픽스 모드" 추가 (planner 우회, implementer + reviewer만) — **(예정·미구현)** 현재는 Phase 부분 재실행으로 수동 우회 |
 | 사내 결재 · 머지 정책 | `docs/rules/06-branch-strategy.md`를 사내 정책으로 덮어쓰기 |
 | touch 금지 모듈 (운영 안전 영역) | `.specify/memory/constitution.md`에 "수정 금지 모듈" 명시 |
 

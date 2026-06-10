@@ -367,6 +367,22 @@ if (-not $DryRun) {
     Write-Host "  [DRY RUN] CLAUDE.md" -ForegroundColor Gray
 }
 
+# 루트 단일 파일 (.gitignore, QUICKSTART.md) — 기존 파일 존재 시 스킵
+foreach ($file in @(".gitignore", "QUICKSTART.md")) {
+    $src  = Join-Path $SourceDir $file
+    $dest = Join-Path $TargetDir $file
+    if (-not (Test-Path $src)) { continue }
+    if ($DryRun) {
+        Write-Host "  [DRY RUN] $file" -ForegroundColor Gray
+    } elseif (-not (Test-Path $dest)) {
+        Copy-Item $src $dest
+        Convert-ContentForOpencode $dest
+        Write-Host "  [OK] $file" -ForegroundColor Green
+    } else {
+        Write-Host "  [SKIP] $file already exists" -ForegroundColor Yellow
+    }
+}
+
 # --- Done ---
 Write-Host ""
 Write-Host "Done." -ForegroundColor Green

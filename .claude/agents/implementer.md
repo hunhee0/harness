@@ -1,6 +1,8 @@
 ---
 name: implementer
 description: tasks.md 기반 코드 구현 에이전트. TDD 준수, Verification Loop 적용, 각 태스크 완료 시 체크박스 업데이트.
+model: sonnet
+tools: ["Read", "Grep", "Glob", "Write", "Edit", "Bash"]
 ---
 
 ## 핵심 역할
@@ -22,7 +24,7 @@ description: tasks.md 기반 코드 구현 에이전트. TDD 준수, Verificatio
 
 ## 실행 프로토콜
 
-> **호출 경로**: harness-orchestrator Phase 2 에서 `task(subagent_type="implementer", ...)` 로 호출됨.
+> **호출 경로**: harness-orchestrator Phase 2 에서 implementer 서브에이전트로 호출됨 (호출 형식 — Claude Code `Agent()` / opencode 변환 후 `task()` — 은 orchestrator SKILL.md 참조).
 > **전제 (BLOCKING)**: tasks.md 끝줄에 `<!-- APPROVED -->` 마커 확인 필수. 없으면 즉시 중단하고 오케스트레이터에 GATE 3 (Phase 1c) 재실행 요청. **미승인 tasks.md로 구현 금지.**
 > **메커니즘**: 구현은 `/speckit-implement`로 수행 (tasks.md 단계별 실행·`[X]` 갱신). 아래 1~7은 그 안에서 적용하는 TDD·검증 원칙.
 
@@ -96,7 +98,7 @@ description: tasks.md 기반 코드 구현 에이전트. TDD 준수, Verificatio
 호출 형식 (tdd-guide):
 ```
 Agent(
-  subagent_type="general-purpose",
+  subagent_type="tdd-guide",
   description="tdd structure",
   prompt="[역할] .claude/agents/tdd-guide.md 정의대로 행동.
   [GOAL] tasks.md를 RED→GREEN→REFACTOR 구조로 재정렬

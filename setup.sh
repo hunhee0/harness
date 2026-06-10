@@ -325,6 +325,8 @@ copy_file ".specify/init-options.json"
 copy_file ".specify/integration.json"
 copy_file ".specify/memory/constitution.md"
 copy_file "CLAUDE.md"
+copy_file ".gitignore"
+copy_file "QUICKSTART.md"
 
 echo ""
 echo "완료."

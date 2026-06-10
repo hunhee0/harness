@@ -1,3 +1,12 @@
+---
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.vue"
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.html"
+---
 > 이 파일은 [common/testing.md](../common/testing.md)를 웹 특화 테스팅으로 확장한다.
 
 # 웹 테스팅 규칙 (Web Testing Rules)

@@ -80,7 +80,7 @@ options:  // 예시: 기술 선택
 |---|---|
 | **Context Engineering** | 컨텍스트 압축, Progressive Disclosure (`05-context-management.md`) |
 | **Verification Loop** | 변경 후 테스트/타입체크/실제 실행으로 결과 검증 |
-| **Permission Gating** | 위험 작업(rm -rf, force push, DB drop)은 사용자 명시 동의 필요 |
+| **Permission Gating** | 위험 명령(rm -rf·force push·reset --hard·clean -fd·branch -D)은 실행 전 강제 확인 — Claude Code: `settings.json` `permissions.ask` / opencode: plugin 가드. DB drop 등 기타 파괴 작업도 사용자 명시 동의 필요 |
 | **Memory Tiering** | `CLAUDE.md`(짧게) → `docs/rules/`(상세) → `docs/specs/`(작업별) → `.specify/memory/constitution.md`(프로젝트 원칙) |
 
 ### 7. 변경 이력 관리
@@ -90,9 +90,9 @@ options:  // 예시: 기술 선택
 
 ### 8. 출력 스타일 (Caveman — Always-on, Hook 강제)
 
-응답 토큰 절감을 위해 **caveman lite** 모드 항시 적용. `.claude/settings.json`의 UserPromptSubmit hook이 매 턴 리마인더를 context에 주입합니다. 상세 규칙은 **`.claude/skills/caveman/SKILL.md`** 참조 (Persistence / Rules / Intensity / Auto-Clarity / Boundaries).
+응답 토큰 절감을 위해 **caveman full** 모드 항시 적용. Claude Code 는 `settings.json`의 UserPromptSubmit hook, opencode 는 plugin(`harness-rules.js`)이 매 턴 리마인더를 context에 주입합니다. 상세 규칙은 **`.claude/skills/caveman/SKILL.md`** 참조 (Persistence / Rules / Intensity / Auto-Clarity / Boundaries).
 
-**기본 intensity**: `lite` (한국어 가독성 우선). `full`/`ultra`는 `/caveman full|ultra` 전환 시 세션 대화 수준에서 적용 — 단 UserPromptSubmit 훅의 리마인더 텍스트는 정적 `[CAVEMAN LITE]`로 고정(전환해도 훅 메시지는 불변).
+**기본 intensity**: `full` (SKILL.md 기본값과 동일). `lite`/`ultra`는 `/caveman lite|ultra` 전환 시 세션 대화 수준에서 적용 — 단 UserPromptSubmit 훅의 리마인더 텍스트는 정적 `[CAVEMAN FULL]`로 고정(전환해도 훅 메시지는 불변).
 
 **한국어/프로젝트 보강** (SKILL.md 위에 덮어쓰기):
 - **한국어 가독성 손상 위험 시 자동 일반 스타일** — 조사/어미가 의미를 결정하는 복잡 문장은 과도한 압축 금지
