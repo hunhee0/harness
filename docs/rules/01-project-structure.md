@@ -9,7 +9,7 @@
 ## 📂 현재 디렉토리 구조
 
 ```
-haness/
+harness/
 ├── CLAUDE.md                              # 하네스 루트 진입점
 ├── README.md                              # 프로젝트 개요
 ├── .claude/

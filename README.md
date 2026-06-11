@@ -1,4 +1,4 @@
-# haness — Claude Code 하네스 엔지니어링 명세서
+# harness — Claude Code 하네스 엔지니어링 명세서
 
 > **신규 프로젝트**와 **기존 운영(ITO) 코드**에 **동일하게** 적용 가능한,
 > AI 코딩 에이전트(Claude Code)를 위한 **하네스 엔지니어링 규칙 모음**입니다.
@@ -239,7 +239,7 @@ Phase 5   완료 ────────── changelog + doc-updater (README/
 ## 📂 디렉토리 구조
 
 ```
-haness/
+harness/
 ├── CLAUDE.md                              # 하네스 루트 진입점 (이 파일 먼저 읽기)
 ├── README.md                              # ← 여기
 ├── .claude/
